@@ -41,6 +41,8 @@ Webブラウザから受け取った情報を元にして、動的にWebペー�
 単純に自宅のPCがダイレクトにWebサーバーに行けるわけではなく、IPアドレス取得のため、<br>
 DNSサーバーへのスタンプラリーを終えなければいけない。<br>
 
+<img width="700" alt="WebArchitecture" src="https://www.nic.ad.jp/ja/dom/img/basics_b.gif"> <br>
+
 これがそのスタンプラリーの様子だ。<br>
 会社の稟議のように、DNSルートサーバーを始めとして、多くのDNSサーバーを媒介しなければならない。<br>
 
@@ -52,7 +54,6 @@ DNSサーバーへのスタンプラリーを終えなければいけない。<b
 
 ><a href="https://www.nic.ad.jp/ja/dom/system.html">ドメイン名のしくみ</a><br>
 一般社団法人日本ネットワークインフォメーションセンターHP
-
 
 ### ○ TCP/IPについて
 

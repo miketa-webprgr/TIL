@@ -90,11 +90,11 @@ Webで使われるさまざまなデータ形式についてまとめました�
 - ツリー構造化された際の各要素はノードと呼ばれる。<br>
 
 ><a href="https://ja.wikipedia.org/wiki/Document_Object_Model">
-  Document Object Model</a><br>
+  Document Object Model</a><br><br>
 フリー百科事典 『ウィキペディア（Wikipedia）』<br>
 
 ><a href="https://eng-entrance.com/what-is-dom">
-  JavaScript初心者でもすぐわかる！DOMとは何か？</a><br>
+  JavaScript初心者でもすぐわかる！DOMとは何か？</a><br><br>
 エンジニアの入り口（Linuxアカデミー）<br>
 
 ### ○ JSONとは
@@ -165,7 +165,7 @@ Webで使われるさまざまなデータ形式についてまとめました�
     - abemaなどはこの形式
 
 ><a href="https://qiita.com/you8/items/e903fd463cf770688e1e">
-  RSS、atomの仕様をまとめる</a><br>
+  RSS、atomの仕様をまとめる</a><br><br>
 Qiita記事 @you8<br>
 
 ### ○ メディアタイプとは

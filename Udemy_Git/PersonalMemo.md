@@ -55,3 +55,6 @@ AWS関係のパスワード等が公開されてしまい、
 
 一時避難できる。急な依頼に対応する際などに使用する。
 
+### ○ Gitに関するリンク集
+- [githubでissue管理を実践してみた](https://qiita.com/fukubaka0825/items/c7710b4e87d478c8ba3b)
+- [いまさらだけどGitを基本から分かりやすくまとめてみた](https://qiita.com/gold-kou/items/7f6a3b46e2781b0dd4a0)

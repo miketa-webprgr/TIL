@@ -83,6 +83,7 @@ Webで使われるさまざまなデータ形式についてまとめました�
    
 ### ○ DOMとは
 
+- HTMLとJavascriptを繋ぐ仕組み
 - DOM = Document Object Model の略
 - Documentについて、タグで囲まれた各Objectをツリー構造にモデル化する仕組みのこと
  - つまり、HTMLの文書をツリー構造化してくれるソフトウェア
@@ -100,20 +101,17 @@ Webで使われるさまざまなデータ形式についてまとめました�
 ### ○ JSONとは
 
 - JSON = Javascript Object Notation の略
-- Javascriptの書式にて、XMLを書いてようなもの
-  - 実際の事例を見ると分かりやすい
-  - XMLはタグで囲んでいるが、JSONはコロンなどで表記している
-- Javascriptの文法で書かれているので、以下の特徴がある
-  - 可読性が低い
-  - Javascriptのでの操作が直接できる
-    - XMLの場合、Javascriptで操作する場合はDOMを挟む必要がある
+- データフォーマットの一種
+- XMLとの対比で理解すると良い
+  - Javascriptの書式にて書かれている
 
-### ○ JSONとは
-
-- JSON = Javascript Object Notation の略
-- Javascriptの書式にて、XMLを書いてようなもの
-  - 実際の事例を見ると分かりやすい
-  - XMLはタグで囲んでいるが、JSONはコロンなどで表記している
+ {
+    "user": "太郎",
+    "age": 23,
+    "gender": "男"
+}
+    - 実際の事例を見ると分かりやすい
+    - XMLはタグで囲んでいるが、JSONはコロンなどで表記している
 - Javascriptの文法で書かれているので、以下の特徴がある
   - 可読性が低い
   - Javascriptのでの操作が直接できる

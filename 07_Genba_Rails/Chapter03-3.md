@@ -74,7 +74,8 @@ Running via Spring preloader in process 37100
 続いて、以下を記述。  
 これでパターンどおりの設定が一括で行えるらしい。  
 
-```:config/routes.rb
+```
+# config/routes.rb
 # 一度、get ~というルートの設定を削除した上で
 
 resources :tasks
@@ -117,7 +118,8 @@ resources :tasks
 
 さて、早速index.html.slimにnewアクションへのリンクを加えていく。
 
-```index.html.slim
+```
+# index.html.slim
 h1 タスク一覧
 
 / rubyコードを書く時は「=」（画面出力される場合）もしくは「-」（画面出力させない場合）
@@ -144,7 +146,8 @@ gemを導入した影響で、そもそもjp.ymlファイルがない。。。
 さて、newアクションへのリンクは作成したので、  
 登録データの新規作成処理コードをコントローラに追記する。  
 
-```tasks_controller.rb
+```
+# tasks_controller.rb
 class TasksController < ApplicationController
  # 他のアクションも書いてあるが省略
   def new
@@ -174,7 +177,8 @@ GETを使う方法とPOSTを使う方法がある。これはSinatraアプリの
 先ほどインスタンス変数「@task」に格納した、新しいタスクのオブジェクト「Task.new」を利用して、  
 登録フォームを表示する。コードはRubyで書いていく。form_withメソッドを使うとのこと。
 
-```new.html.slim
+```
+# new.html.slim
 h1 タスクの新規登録
 
 # これはindex.html.slimに戻るためのコード
@@ -297,7 +301,8 @@ bootstrap関係のdivタグがあると分かりづらいので、そこは省�
 現場railsに従って、コードを書いてみた。  
 なお、private以降がストロングパラメータに関するコード。  
 
-```tasks_controller.rb
+```
+# tasks_controller.rb
   def create
     task = Task.new(tasks_params)
     task.save!
@@ -333,9 +338,38 @@ redirect_toは、renderと異なる。
 ここで、railsサーバーを立ち上げて確認したところ、トラブル発生。
 メンターさんに頼る！！！ 質問については、下記のとおり。  
 
+[質問：Form_withのトラブル（controller・Routers.rbかも）](https://github.com/miketa-webprgr/TIL/blob/master/Genba_Rails/Quesiton-Chapter03-3.md)  
+
 というか、自分で書いていたとおり、ここが明らかにおかしい。。。  
 
-> フォームが「/tasks/new」にPOSTメソッドで飛ばすので、createアクションが実行される。  
+> フォームが '/tasks/new' にPOSTメソッドで飛ばすので、createアクションが実行される。  
 > （/tasksに飛んでいるわけではないが、/tasks以下にPOSTで飛んでいるので適用される）  
 
-[質問：Form_withのトラブル（controller・Routers.rbかも）](https://github.com/miketa-webprgr/TIL/blob/master/Genba_Rails/Quesiton-Chapter03-3.md)  
+そもそもなぜ '/tasks' にPOSTで飛ばず、'/tasks/new'にPOSTで飛ぶのか。  
+form_withについて、railsは「@task = Task.new」と空のオブジェクトであることを認識して、  
+createアクションに飛ぶように出来ているとこのこと。  
+(「resources :tasks」と設定したから)  
+
+試しに以下のよう書き換えてみる。  
+すると、フォームが'/tasks' にPOSTで飛ぶように！  
+
+```
+# new.html.slim
+# フォーム作成のコードのみ記載し、他を省略する
+# @task を Task.new に変換してみた
+= form_with model: Task.new , local: true do |f|
+  .form-group
+    = f.label :name
+    = f.text_field :name, class: 'form-control', id: 'task_name'
+  .form-group
+    = f.label :description
+    = f.text_area :description, rows: 5, class: 'form-control', id: 'task_description'
+  =f.submit nil, class: 'btn btn-primary'
+```
+
+理由はよく分からない。  
+原因を探ろうと、また Task.new を @task に戻してみる。  
+
+すると、なぜか今度は'/tasks' にPOSTで飛ぶように。  
+不思議であるが、ここに拘るよりも新しいことを学ぶ方が重要だ。  
+次に進もう。  

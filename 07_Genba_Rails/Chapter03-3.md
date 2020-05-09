@@ -373,3 +373,286 @@ createアクションに飛ぶように出来ているとこのこと。
 すると、なぜか今度は'/tasks' にPOSTで飛ぶように。  
 不思議であるが、ここに拘るよりも新しいことを学ぶ方が重要だ。  
 次に進もう。  
+
+<br>
+
+### Flashメッセージ
+
+---
+
+Railsでは、redirect_toを使ってFlashメッセージを渡すことができる。  
+詳細は後ほど勉強していくが、sessionを使って実現しているとのこと。  
+
+調べたところによると、HTTPレスポンスを返す際にそのレスポンスヘッダーに  
+そのメッセージを仕込ませるという処理を行っている。ということらしい。  
+
+ここで、今までしてきたHTTPの勉強が生きてくる。
+あのレスポンスヘッダーか。しかも、通信がステートレスだから、一度の通信で消える。    
+そんな感じだろうか。  
+
+redirect_toの場合、簡潔にflashのnoticeを使えることができるとのこと。
+以下のコードはどちらも同じ意味となる。  
+
+以下に詳しい解説がある。
+[Pikawaka: 【Rails】完全保存版！flashの使い方についてを徹底解説！](https://pikawaka.com/rails/flash)  
+
+```
+redirect_to tasks_url, notice: "タスク「#(task.name)」"を登録しました。"
+```
+  
+```
+flash[:notice] = "タスク「#(task.name)」"を登録しました。"
+redirect_to tasks_url
+```
+
+デフォルトでは:noticeと:alertのみしかないが、任意のFlashキーを追加できるとのこと。  
+
+また、redirect_toではなくてrenderする際にメッセージを出したい場合、
+flash.nowを使えばよいらしい。おそらく、以下のようにする。（試していません。。。）  
+
+```
+flash.now[:notice] = "タスク「#(task.name)」"を登録しました。"
+render tasks_url
+```
+
+さて、指示されているように、application.html.slimにコードを書いてみる。  
+そして、flashメッセージが出るか試してみる。  
+
+よし、来た！  
+<a href="https://gyazo.com/e4cb0c47676f3240ee20070e0c5f617c"><img src="https://i.gyazo.com/e4cb0c47676f3240ee20070e0c5f617c.png" alt="Image from Gyazo" width="542" border=1></a>  
+
+<br>
+
+<br>
+
+### 一覧表示機能を実装する
+
+---
+
+さて、機能を実装するので、アクションの流れを確認する。  
+
+- indexアクションでindex.html.slimに戻る
+  - indexアクションに変更を加えて、Taskオブジェクトのデータを全て取得する
+  - index.html.slimに変更を加えて、取得データが表示されるようにする
+
+```
+# tasks_controller.rb
+def index
+  @tasks = Task.all
+end 
+```
+
+Taskオブジェクトの格納先は、@tasksというインスタンス変数とする。  
+復習になるが「@」を付けることで、違うメソッドでも@tasksを引っ張ってこれる。  
+
+ビューファイルだが、下記のとおり修正を加える。  
+
+```
+# index.html.slim
+.mb-3
+table.table.table-hover
+  thead.thead-default
+    tr
+      th= Task.human_attribute_name(:name)
+      th= Task.human_attribute_name(:created)
+    tbody
+      - @tasks.each do |t|
+        tr
+          td= t.name
+          td= t.created_at
+```
+
+Task.human_attribute_name(:name)について調べる。  
+以下の記事を参考した。  
+
+[Railsのモデル名.human_attribute_name(:カラム名)って何だっけ？](https://fuqda.hatenablog.com/entry/2019/04/07/212254)  
+
+要は、ymlにて定義しているnameを参照し、テーブルヘッダーを日本語で表示してくれるらしい。  
+
+「.mb-3」などは、おそらくbootstrap関係なので割愛する。  
+
+実装がうまくいったか確認する。  
+<a href="https://gyazo.com/07c69480f88ec88f95bbc04fdceb1cbb"><img src="https://i.gyazo.com/07c69480f88ec88f95bbc04fdceb1cbb.png" alt="Image from Gyazo" width="550" border=1></a>  
+
+<br>
+
+### 詳細表示機能を実装する
+
+---
+
+またアクションの流れを確認する。  
+
+- index.html.slimから、テーブルに記載されている該当の名称をクリック
+- showアクションに飛び、該当のデータを探し出す
+- show.html.slimに飛び、取得データの詳細情報が確認できる。
+
+まず、index.html.slimにリンクを作成する。  
+リンクの作成には、link_toを使う。  
+
+コードは以下のとおりとなる。
+```
+# index.html.slim
+# 該当部分を抜粋
+    tbody
+      - @tasks.each do |t|
+        tr
+          td= link_to t.name, t
+```
+
+link_toの書き方の基本は以下のとおり。  
+
+```
+<%= link_to "テキスト", "リンク先のパス" %>
+```
+
+ここから、t.nameが実際に画面に表示される名称であることが分かる。  
+問題は「t」の部分である。tオブジェクトから railsが推測して作ってくれるとのこと。  
+
+このあたりの仕組みが、調べたけれどもよく分からない。  
+root_pathを使う書き方の省略形みたいなことだろうか。  
+
+なお、root_pathを使う書き方は下記のとおり。  
+
+```
+# index.html.slim
+# 該当部分を抜粋
+    tbody
+      - @tasks.each do |t|
+        tr
+          td= link_to t.name, task_path(t)
+```
+
+pikawakaに解説がある。  
+[【Rails】link_toの使い方を徹底解説！(Prefixとはの部分)](https://pikawaka.com/rails/link_to#Prefixとは？)  
+
+<a href="https://gyazo.com/f803a306129903f8dd813e9f6ae56fc8"><img src="https://i.gyazo.com/f803a306129903f8dd813e9f6ae56fc8.png" alt="Image from Gyazo" width="344" border=1></a>
+
+<br>
+
+このPrefixの下に書いてある文字+「_path」を書くと、対応するURLを呼び出してくれるらしい。  
+ということは、他のURLを呼び出したければ、new_taskやedit_taskも使えると。  
+その後に () を付けることで、変数やインスタンス変数を呼び出すことも可能。  
+
+root_pathについては、既に記載したresourcesの記事などに書いてある。  
+[Qiita：Rails resourcesメソッドとresourceメソッド](https://qiita.com/Tamitchao/items/6f45aa6daf1412b78d10)  
+
+じゃあ、showアクションに移ろう。
+
+```
+# tasks_controller.rb
+def show
+  @task = Task.find(params[:id])
+end
+```
+
+taskというインスタンス変数に該当のidのデータを格納する。  
+このidというパラメータであるが、showアクションがGETメソッドであるため、  
+URLを経由してそのidが引っ張ってこられている。  
+
+index.html.slimにて、<http://~/tasks/:id>へのリンクが作成されているため、
+この:idがパラメータとして引っ張ってこられている、ということだ。  
+
+ここはGETとPOSTの違いを改めて確認すると、より理解が深まる。  
+[GET、POSTについてわかりやすく解説してみた](https://qiita.com/ryokky59/items/bba97cbfaa899b03e071)  
+
+さて、最後に詳細を表示する画面を作成していく。  
+具体的には、show.html.slimにコードを加ていく。
+
+```
+# show.html.slim
+h1 タスクの詳細
+
+.nav.justify-content-end
+  = link_to '一覧', tasks_path, class: 'nav-link'
+
+table.table.table-hover
+  tbody
+  tr
+    th= Task.human_attribute_name(:id)
+    td= @task.id
+  tr
+    th= Task.human_attribute_name(:name)
+    td= @task.name
+  tr
+    th= Task.human_attribute_name(:description)
+    # ここの書き方だけ、難しい。。。
+    td= simple_format(h(@task.description),{}, sanitize: false, wrapper_tag: "div")
+  tr
+    th= Task.human_attribute_name(:created_at)
+    td= @task.created_at
+  tr
+    th= Task.human_attribute_name(:updated_at)
+    td= @task.updated_at
+```
+
+simple_formatの部分だが、なぜこうしているのか。
+たしかめるために、あえてこう書いてみる。
+
+```
+# show.html.slim
+# 該当部分以外を省略
+
+  tr
+    th= Task.human_attribute_name(:description)
+    td= @task.description
+```
+
+画面とコードの比較を以下に貼付する。  
+
+<br>
+
+<a href="https://gyazo.com/f86c18c827e9ce64abc81b0cf7cb81c3"><img src="https://i.gyazo.com/f86c18c827e9ce64abc81b0cf7cb81c3.png" alt="Image from Gyazo" height="300" border=1></a> <a href="https://gyazo.com/b66c4fcbe5f7d9278b740244a1a99c71"><img src="https://i.gyazo.com/b66c4fcbe5f7d9278b740244a1a99c71.png" alt="Image from Gyazo" height="300" border=1></a>  
+
+<br>
+
+<a href="https://gyazo.com/1230db6ed8a156eabbd5cdfd7774aea3"><img src="https://i.gyazo.com/1230db6ed8a156eabbd5cdfd7774aea3.png" alt="Image from Gyazo" height="250" border=1></a> <a href="https://gyazo.com/63fc1f6babca6fd633627c743435523c"><img src="https://i.gyazo.com/63fc1f6babca6fd633627c743435523c.png" alt="Image from Gyazo" height="250" border=1></a>  
+
+<br>
+
+simple_formatを使うと、`<br>`タグを追記して、うまく表現してくれることが分かった。  
+
+こちらにまとめがある。  
+[Qiita:Railsヘルパーメソッド「simple_format」の使い方](https://qiita.com/KA-ZU-KI/items/2749415d396c2e2a497a)  
+
+<br>
+
+### 編集機能を実装する
+
+---
+
+さて、CRUDのCRまでは実装が終わったので、Updateの機能を追加する。  
+例のごとく、アクションの流れを確認する。  
+
+1. index.html.slimにリンクを貼り、editのアクションに飛ばすように設定する。
+2. show.html.slimでもリンクを貼り、editのアクションに飛ばすように設定する。
+3. editアクションに飛ぶと、edit.html.slim（編集画面）を開くようにする。
+4. 編集を終えて「登録する」をクリックすると、updateアクションに飛ばすように設定する。
+5. updateアクションにて、データを更新し、index.html.slimの画面に戻す。  
+
+こんな感じだろうか。　　
+まず、１番と２番の作業を行っていく。リンクの作成に取り掛かる。　　
+
+```
+# index.html.slim
+# 該当部分のみ抜粋
+# 最終行を追加
+
+  td= link_to t.name, task_path(t)
+  td= t.created_at
+  td= link_to '編集', edit_task_path(t), class: 'btn btn-primary mr-3'
+```  
+
+```
+# show.html.slim
+# 該当部分のみ抜粋
+# 最終行として追加
+
+= link_to '編集', edit_task_path, class: 'btn btn-primary mr-3'
+```
+
+なお、show.html.slimにaあたっては、link_toというメソッドでedit_task_pathに変数が不要である。  
+
+<br>
+
+### 次はedit画面の作成を行うこと
+---

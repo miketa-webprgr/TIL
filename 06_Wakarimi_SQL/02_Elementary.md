@@ -81,3 +81,105 @@ limit 1 offset 3;
 複雑なコードであっても、このことに留意して読み解く。  
 
 練習問題も無事終了。  
+
+<br>
+
+### ● 第５章 group by 句
+
+---
+
+集約関数（Aggregate Function)  
+
+- 合計する (sum())
+- 平均する (avg())
+- 最大値を調べる (max()) 
+- 最小値を調べる (min()) 
+- 行数を数える (count())
+
+小数点以下の桁数を指定
+- to_char(avg(height), ’999.99’)
+  - これで小数点２桁までの表記になる
+  - ’999.99’が書式指定
+
+```
+select gender, avg(height)
+from members
+group by gender;
+```
+
+```
+select gender, max(height), min(height), sum(height)
+             , count(*), to_char(avg(height), '999.99')
+from members
+group by gender
+order by gender desc;
+```
+
+countについて
+count(*) = 行数をカウントする
+count(height) = 身長がnullでないものをカウントする
+
+集約関数の戻り値は、データ型が集約関数ごとに異なる。
+- avgは、整数を受け取っても、戻り値のデータ型は実数になる。
+  - ３と５を受け取っても、戻り値は４ではなく4.0となる。
+
+having句を使うと、グループをフィルターできる。
+
+```
+ gender | max | min | sum | count | to_char 
+--------+-----+-----+-----+-------+---------
+ M      | 175 | 163 | 676 |     4 |  169.00
+ F      | 170 | 158 | 328 |     2 |  164.00
+(2 rows)
+```
+
+having avg(height) > 168　を加えると、以下のとおり。  
+なお、order by の後に加えると syntax errorになる。  
+
+```
+ gender | max | min | sum | count | to_char 
+--------+-----+-----+-----+-------+---------
+ M      | 175 | 163 | 676 |     4 |  169.00
+(1 row)
+```
+
+ポイント:
+- グループ化される前は「行」が操作対象
+  - なので where 句は行をフィルタする
+- グループ化後は「グループ」が操作対象
+  - なので having 句や order by 句や select 句はグループを操作する
+  - また「select gender」の gender は、 行の列名ではなくグループのキー名を表す
+
+また、group byを使うと、select句で指定できるのは「group化のキー」と「集合関数」だけ。  
+要は、select句とgroup by句を合わせないと、エラーが起きるということ。  
+
+例えば、以下はエラーが起きる。  
+
+```
+# select genderとしてgroup by と合わせないとエラーになる
+
+select name, avg(height)
+from members
+group by gender;
+```
+
+order byでも同様にselect句との組み合わせが悪いとエラーとなる。  
+
+```
+# nameでは並びかえできない。
+# genderか、avg(height)でしか並べ替えられない。  
+
+select gender, avg(height)
+from members
+group by gender
+order by name;
+```
+
+group by では式が指定できる。
+
+```
+select length(name), count(*)
+from members
+group by length(name); 
+```
+

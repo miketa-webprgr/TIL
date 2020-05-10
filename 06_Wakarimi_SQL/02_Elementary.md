@@ -88,7 +88,8 @@ limit 1 offset 3;
 
 ---
 
-集約関数（Aggregate Function)  
+#### 集約関数（Aggregate Function)  
+---  
 
 - 合計する (sum())
 - 平均する (avg())
@@ -96,12 +97,20 @@ limit 1 offset 3;
 - 最小値を調べる (min()) 
 - 行数を数える (count())
 
-小数点以下の桁数を指定
+小数点以下の桁数を指定する場合、以下のように書く。  
+
 - to_char(avg(height), ’999.99’)
   - これで小数点２桁までの表記になる
   - ’999.99’が書式指定
 
+##### 書き方の事例  
+---
+
 ```
+# selectする際に、集約関数を使える
+# そもそも列が選択できるわけではなく、式を選択するもの
+# genderというのも、=genderという簡単な式を使っているだけ
+
 select gender, avg(height)
 from members
 group by gender;
@@ -115,6 +124,9 @@ group by gender
 order by gender desc;
 ```
 
+##### その他  
+---
+
 countについて
 count(*) = 行数をカウントする
 count(height) = 身長がnullでないものをカウントする
@@ -123,9 +135,14 @@ count(height) = 身長がnullでないものをカウントする
 - avgは、整数を受け取っても、戻り値のデータ型は実数になる。
   - ３と５を受け取っても、戻り値は４ではなく4.0となる。
 
+#### having句  
+---
+
 having句を使うと、グループをフィルターできる。
 
 ```
+# フィルター前
+
  gender | max | min | sum | count | to_char 
 --------+-----+-----+-----+-------+---------
  M      | 175 | 163 | 676 |     4 |  169.00
@@ -134,14 +151,21 @@ having句を使うと、グループをフィルターできる。
 ```
 
 having avg(height) > 168　を加えると、以下のとおり。  
-なお、order by の後に加えると syntax errorになる。  
 
 ```
+# ファイルター後
+
  gender | max | min | sum | count | to_char 
 --------+-----+-----+-----+-------+---------
  M      | 175 | 163 | 676 |     4 |  169.00
 (1 row)
 ```
+
+なお、order by の後に加えると syntax errorになる。  
+順番に注意すること。  
+
+#### SQLの処理について注意すること  
+---
 
 ポイント:
 - グループ化される前は「行」が操作対象

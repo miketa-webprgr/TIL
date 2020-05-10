@@ -335,8 +335,8 @@ redirect_toは、renderと異なる。
 
 ---
 
-ここで、railsサーバーを立ち上げて確認したところ、トラブル発生。
-メンターさんに頼る！！！ 質問については、下記のとおり。  
+ここで、railsサーバーを立ち上げて確認したところ、トラブル発生。  
+メンターさんに質問してみる！！！ 質問については、下記のとおり。  
 
 [質問：Form_withのトラブル（controller・Routers.rbかも）](https://github.com/miketa-webprgr/TIL/blob/master/Genba_Rails/Quesiton-Chapter03-3.md)  
 
@@ -371,6 +371,7 @@ createアクションに飛ぶように出来ているとこのこと。
 原因を探ろうと、また Task.new を @task に戻してみる。  
 
 すると、なぜか今度は'/tasks' にPOSTで飛ぶように。  
+
 不思議であるが、ここに拘るよりも新しいことを学ぶ方が重要だ。  
 次に進もう。  
 
@@ -549,7 +550,7 @@ taskというインスタンス変数に該当のidのデータを格納する�
 このidというパラメータであるが、showアクションがGETメソッドであるため、  
 URLを経由してそのidが引っ張ってこられている。  
 
-index.html.slimにて、<http://~/tasks/:id>へのリンクが作成されているため、
+index.html.slimにて、`http://~/tasks/:id`へのリンクが作成されているため、
 この:idがパラメータとして引っ張ってこられている、ということだ。  
 
 ここはGETとPOSTの違いを改めて確認すると、より理解が深まる。  
@@ -585,7 +586,7 @@ table.table.table-hover
     td= @task.updated_at
 ```
 
-simple_formatの部分だが、なぜこうしているのか。
+simple_formatの部分だが、なぜこうしているのか。  
 たしかめるために、あえてこう書いてみる。
 
 ```
@@ -630,7 +631,13 @@ simple_formatを使うと、`<br>`タグを追記して、うまく表現して�
 5. updateアクションにて、データを更新し、index.html.slimの画面に戻す。  
 
 こんな感じだろうか。　　
-まず、１番と２番の作業を行っていく。リンクの作成に取り掛かる。　　
+
+<br>
+
+#### １番と２番に取り掛かる（editアクションに飛ぶようにリンクを作る）
+---
+まず、１番と２番の作業を行っていく。  
+リンクの作成に取り掛かる。  
 
 ```
 # index.html.slim
@@ -650,9 +657,141 @@ simple_formatを使うと、`<br>`タグを追記して、うまく表現して�
 = link_to '編集', edit_task_path, class: 'btn btn-primary mr-3'
 ```
 
-なお、show.html.slimにaあたっては、link_toというメソッドでedit_task_pathに変数が不要である。  
+なお、index.html.slimでは、edit_task_pathメソッドにて変数「t」が引数となっている。　　
+ここは、t.idとなっていないが、tと入力されるだけで勝手にrailsが推測し、
+params[:id]を取得し、EDITアクションを起こし、GETメソッドで ’tasks/:id/edit’ にアクセスしている。  
+
+また、show.html.slimにあたっては引数がない。
+ここでは更にすごくて、そもそも引数を入力することなく、自動的にリンクを作成していくれる。  
+それは、前回と違って、何の入力がなくとも、@task.idからparams[:id]を取得することが推測できるからだ。  
+
+ちなみに、index.html.slimをわざわざ「t → t.id」としてもエラーは起きないし、  
+show.html.slimを「edit_task_path → edit_task_path(@task.id)」としてもエラーは起きない。  
+
+この推測機能はすごいが、初学者には省略が多すぎて混乱の元になる。。。  
 
 <br>
 
-### 次はedit画面の作成を行うこと
+#### ３番と４番に取り掛かる（edit.html.slimの作成＋updateアクションへのリンク作成）
 ---
+
+さて、３番に取り掛かる。editアクションの作成だ。  
+show.html.slimと同じように、該当データを引っ張ってくる処理を書けばよいので、端的にshowアクションをコピペすればよい。  
+
+```
+# tasks_controller.rb
+
+  def edit
+    @task = Task.find(params[:id])
+  end
+```
+
+よし、次にedit.html.slimの作成だ。  
+new.html.slimと同じような画面にしたいので、h1以外は変更がない。  
+
+```
+# edit.html.slim
+h1 タスクの編集
+
+.nav.justify-content-end
+  = link_to '一覧', tasks_path, class: 'nav-link'
+
+= form_with model: @task, local: true do |f|
+  .form-group
+    = f.label :name
+    = f.text_field :name, class: 'form-control', id: 'task_name'
+  .form-group
+    = f.label :description
+    = f.text_area :description, rows: 5, class: 'form-control', id: 'task_description'
+  = f.submit nil, class: 'btn btn-primary'
+```
+
+なお、new.html.slimと異なり、ボタンを押した際の呼び起こすアクションが異なる。  
+new.html.slimの場合、createアクションを呼び起こす必要があったが、  
+今回はeditアクションを呼び起こす必要がある。  
+
+では、なぜコードは一緒で構わないのか。  
+それは、以下に記載があるが、@taskが空でない場合、自動でupdateアクションを呼ぶ仕様となっているからだ。  
+奥が深い. これが DRY(Dont't Repeat Yourself)ってやつなのか！？   
+
+[Qiita：【Rails】form_with/form_forについて【入門】](https://qiita.com/snskOgata/items/44d32a06045e6a52d11c)  
+
+<br>
+
+#### ５番に取り掛かる（updateアクションの作成）
+---
+
+さて、updateアクションを作成する。  
+やることはcreateアクションと近い。参考にするとよい。  
+
+```
+# tasks_controller.rb
+
+  def update
+    task = Task.find(params[:id])
+    task.update!(task_params)
+    redirect_to tasks_url, notice: "タスク「#{task.name}」を更新しました。"
+  end
+
+# 以下、不正な入力を防ぐためのストロングパラメータに関する記述
+
+  private
+
+  def task_params
+    params.require(:task).permit(:name, :description)
+  end
+```
+
+まず、URLから該当のidのデータをtaskというインスタンスに代入する。  
+次に、DB更新するため、update!メソッドを利用する。  
+ここで、task_paramsメソッドを呼び出し、不正な入力を防ぐ。  
+そして、index.html.slimにリダイレクトさせる。  
+
+以下のとおり、編集機能が実装できた。  
+
+<br>
+
+<a href="https://gyazo.com/3cb196c370bad135272c5b6f672a8bb5"><img src="https://i.gyazo.com/3cb196c370bad135272c5b6f672a8bb5.gif" alt="Image from Gyazo" width="550" border=1/></a>  
+
+<br>
+
+
+### 新規登録画面と編集画面の共有化（パーシャルの利用）
+
+---
+
+入力フォーム部分が同じであるため、その部分を共通化する。  
+共通化した「_form.html.slim」というファイルを作成しい、renderメソッドで読み込む。  
+
+なお、共通化した部分のファイルをパーシャルテンプレートといい、ファイル名をアンダースコアで始める。  
+また、読み込む場合、アンダースコアを付けない名前を用いる。  
+
+```
+# _form.html.slim
+# 共通化する部分
+# 「model:@task」を「model:task」に変更
+
+= form_with model: task, local: true do |f|
+  .form-group
+    = f.label :name
+    = f.text_field :name, class: 'form-control', id: 'task_name'
+  .form-group
+    = f.label :description
+    = f.text_area :description, rows: 5, class: 'form-control', id: 'task_description'
+  = f.submit nil, class: 'btn btn-primary'
+```
+
+```
+# new.html.slim + edit.htm.slim に加えるコード
+
+= render partial: 'form', locals: {task: @task}
+```
+
+なお、taskと書き換えるような措置を行うのは、インスタンス変数の定義に依存しない、再利用生の高いパーシャルにするためとのこと。  
+こちらに解説がある。コントローラがどのビューと結びついているか分かりづらくなることなどがあるとのこと。  
+
+[Qiita: partialではインスタンス変数を参照しない方がいい](https://qiita.com/mom0tomo/items/e1e3fd29729b2d112a48)  
+
+また、こちらに細かい解説がある。  
+[Pikawaka: 【Rails】部分テンプレートの使い方を徹底解説！](https://pikawaka.com/rails/partial_template)  
+い"}

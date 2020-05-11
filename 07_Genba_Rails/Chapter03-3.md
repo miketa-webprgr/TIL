@@ -146,7 +146,7 @@ gemを導入した影響で、そもそもjp.ymlファイルがない。。。
 さて、newアクションへのリンクは作成したので、  
 登録データの新規作成処理コードをコントローラに追記する。  
 
-```
+```rb
 # tasks_controller.rb
 class TasksController < ApplicationController
  # 他のアクションも書いてあるが省略
@@ -301,7 +301,7 @@ bootstrap関係のdivタグがあると分かりづらいので、そこは省�
 現場railsに従って、コードを書いてみた。  
 なお、private以降がストロングパラメータに関するコード。  
 
-```
+```rb
 # tasks_controller.rb
   def create
     task = Task.new(tasks_params)
@@ -436,7 +436,7 @@ render tasks_url
   - indexアクションに変更を加えて、Taskオブジェクトのデータを全て取得する
   - index.html.slimに変更を加えて、取得データが表示されるようにする
 
-```
+```rb
 # tasks_controller.rb
 def index
   @tasks = Task.all
@@ -539,7 +539,7 @@ root_pathについては、既に記載したresourcesの記事などに書い�
 
 じゃあ、showアクションに移ろう。
 
-```
+```rb
 # tasks_controller.rb
 def show
   @task = Task.find(params[:id])
@@ -678,7 +678,7 @@ show.html.slimを「edit_task_path → edit_task_path(@task.id)」としても�
 さて、３番に取り掛かる。editアクションの作成だ。  
 show.html.slimと同じように、該当データを引っ張ってくる処理を書けばよいので、端的にshowアクションをコピペすればよい。  
 
-```
+```rb
 # tasks_controller.rb
 
   def edit
@@ -724,7 +724,7 @@ new.html.slimの場合、createアクションを呼び起こす必要があっ�
 さて、updateアクションを作成する。  
 やることはcreateアクションと近い。参考にするとよい。  
 
-```
+```rb
 # tasks_controller.rb
 
   def update
@@ -794,3 +794,106 @@ new.html.slimの場合、createアクションを呼び起こす必要があっ�
 
 また、こちらに細かい解説がある。  
 [Pikawaka: 【Rails】部分テンプレートの使い方を徹底解説！](https://pikawaka.com/rails/partial_template)  
+
+<br>
+
+### 削除機能を実装する
+
+---
+
+さて、最後はCRUDのDelete機能の実装だ。  
+アクションやビューの流れを確認する。  
+
+1. index.html.slimに削除ボタンを追加。
+2. show.html.slimにも削除ボタンを追加。
+3. 削除ボタンをクリックすると、destroyアクションへ
+4. destroyアクションで、データベースからデータを削除
+5. 削除後、indexアクションへ飛ばす(index.html.slimを表示)
+
+なお、３の手順にて削除前に確認ダイアログを表示させる。  
+
+<br>
+
+#### １番に取り掛かる（削除ボタンの作成）（３番も兼ねる）
+---
+
+さて、コードに以下のように追記する。
+
+```
+# index.html.slim
+# 他の部分を省略
+# 最終行を追記
+
+   tbody
+      - @tasks.each do |t|
+        tr
+          td= link_to t.name, task_path(t)
+          td= t.created_at
+          td
+            = link_to '編集', edit_task_path(t), class: 'btn btn-primary mr-3'
+            = link_to '削除', task, method: :delete, data: { confirm: "タスク「#{t.name}」を削除します。よろしいですか？"}, class: 'btn btn-danger'
+
+```
+
+また、pikawakaを確認。  
+[【Rails】link_toの使い方を徹底解説！](https://pikawaka.com/rails/link_to#method)  
+
+これまでのlink_toは、メソッドがGETであったため記載がなかった。  
+しかし、今回はdeleteメソッドであるため、指定が必要になる。  
+
+deleteメソッドにすることで、railsが自動的にdestroyアクションを読み込み、
+'/tasks/:id(.:format)'にアクセスする。  
+
+ルートファイルに「resources: tasks」と設定しただけで、ここまでなるのは、改めてすごい。  
+
+なお、「data:」を使うと確認フォームが出せる。  
+以下では、設定方法について案内がある。  
+
+[data: {confirm: }の確認ダイアログをいい感じにする【Ruby on Rails】](https://fuchiaz.com/rails-gem-data-confirm-modal/)  
+
+せっかくなので、ここを参考にしてもう少し修正を加えてみようとした。。。
+だが、gemの導入は不都合が起きることが多いので慎重に。  
+今回は見送ることにした（正確には、やり出したら大変な道のりであることに気づいたので引き返すことに）。
+
+こういう時に備えて、ちゃんと「git add」しておくようにしよう。  
+
+なお、slimの書き方に慣れず、エラーを連発してしまう。。。  
+
+<br>
+
+#### ２番に取り掛かる（削除ボタンの作成）（３番も兼ねる） 
+---
+
+さて、次にshow.html.slimにも追加する。  
+
+```
+# show.html.slim
+# 他の部分を省略
+# 最終行を追記
+
+= link_to '編集', edit_task_path(@task.id), class: 'btn btn-primary mr-3'
+= link_to '削除', @task, method: :delete, data: { confirm: "タスク「#{@task.name}」を削除します。よろしいですか？"}, class: 'btn btn-danger'
+```
+<br>
+
+#### ４番と５番に取り掛かる（destroyアクションの作成） 
+---
+
+createやupdateアクションを参考に作成。
+destroyメソッドを使用し、index.html.slimにredirectする。  
+
+```rb
+# tasks_controller.rb
+# 以下を追加
+
+  def destroy
+    task = Task.find(params[:id])
+    task.destroy
+    redirect_to tasks_url, notice: "タスク「#{task.name}」を削除しました。"
+  end
+
+```
+
+<a href="削除１"><img src="https://i.gyazo.com/7b625402f6268281a60e782c7da62582.gif" alt="Image from Gyazo" width="550" border=1/></a>  
+
+<a href="削除２"><img src="https://i.gyazo.com/63a165c64fa6e043f72b5eec7034b29e.gif" alt="Image from Gyazo" width="550" border=1/></a>  

@@ -8,7 +8,7 @@
 何らかの句を出力するには、select句を使う。  
 出力方法は、以下のとおり。  
 
-```
+```sql
 select 'Hello';
 ```
 
@@ -16,14 +16,14 @@ select 'Hello';
 テーブルの全ての行を出力する場合は以下のとおり。  
 （テーブル名は「members」とする）  
 
-```
+```sql
 select *
 from members;
 ```
 
 なお、列名を選択して出力することも可能。  
 
-```
+```sql
 # genderとnameは列名
 select gender, name
 from members;
@@ -32,7 +32,7 @@ from members;
 ある特定の行を選ぶ場合には、where句で指定する。
 等号だけでなく、不等号も使える。  
 
-```
+```sql
 select *
 from members
 where name = 'ミカサ';
@@ -40,7 +40,7 @@ where name = 'ミカサ';
 
 where句では、andやorなどを使うこともできる。
 
-```
+```sql
 # 該当部分のみ抜粋
 where gender = 'M' and height >= 170;
 ```
@@ -48,7 +48,7 @@ where gender = 'M' and height >= 170;
 整列するには、「order by」句を使う。  
 order by 句をつけないと順番は不定のため、なるべく使うこと。  
 
-```
+```sql
 select *
 from members
 order by name;
@@ -59,7 +59,7 @@ order by name;
 
 並び替える場合、重複しない値を使うこと。  
 
-```
+```sql
 # 背が高い順に並べ、同じ場合はidが小さい順に並べる
 order by height desc, id;
 ```
@@ -68,7 +68,7 @@ order by height desc, id;
 先頭の行からn行だけ出力しない場合には、offset句を使う。  
 limitとoffsetを組み合わせる場合、まずoffsetが適用される。  
 
-```
+```sql
 # 先頭から３行スキップされ、４行目だけを出力する
 select * from members order by id
 limit 1 offset 3;
@@ -106,7 +106,7 @@ limit 1 offset 3;
 ##### 書き方の事例  
 ---
 
-```
+```sql
 # selectする際に、集約関数を使える
 # そもそも列が選択できるわけではなく、式を選択するもの
 # genderというのも、=genderという簡単な式を使っているだけ
@@ -116,7 +116,7 @@ from members
 group by gender;
 ```
 
-```
+```sql
 select gender, max(height), min(height), sum(height)
              , count(*), to_char(avg(height), '999.99')
 from members
@@ -140,7 +140,7 @@ count(height) = 身長がnullでないものをカウントする
 
 having句を使うと、グループをフィルターできる。
 
-```
+```sql
 # フィルター前
 
  gender | max | min | sum | count | to_char 
@@ -152,7 +152,7 @@ having句を使うと、グループをフィルターできる。
 
 having avg(height) > 168　を加えると、以下のとおり。  
 
-```
+```sql
 # ファイルター後
 
  gender | max | min | sum | count | to_char 
@@ -179,7 +179,7 @@ having avg(height) > 168　を加えると、以下のとおり。
 
 例えば、以下はエラーが起きる。  
 
-```
+```sql
 # select genderとしてgroup by と合わせないとエラーになる
 
 select name, avg(height)
@@ -189,7 +189,7 @@ group by gender;
 
 order byでも同様にselect句との組み合わせが悪いとエラーとなる。  
 
-```
+```sql
 # nameでは並びかえできない。
 # genderか、avg(height)でしか並べ替えられない。  
 
@@ -201,9 +201,78 @@ order by name;
 
 group by では式が指定できる。
 
-```
+```sql
 select length(name), count(*)
 from members
 group by length(name); 
 ```
 
+<br>
+
+### ● 第６章 便利な機能
+---
+
+<br>
+
+#### コメントと別名（Alias）  
+---
+
+SQL には、２種類のコメントがあります。  
+- 範囲コメント ... 「/*」から「*/」までを読み飛ばす。
+- 行コメント ... 「--」から行末までを読み飛ばす。
+
+SQL では、列や式に別名 (Alias) をつけられる。  
+以下のとおり。
+
+```sql
+-- 早速、コメントの練習！
+-- asは省略可能
+
+select name as 名前, height as 身長, gender as 性別 
+from members;
+
+   名前   | 身長 | 性別 
+---------+------+------
+ エレン   |  170 | M
+ ミカサ   |  170 | F
+ アルミン |  163 | M
+ ジャン   |  175 | M
+ サシャ   |  168 | M
+ コニー   |  158 | F
+(6 rows)
+
+```
+
+
+なお、参照用の別名（SQL操作用のラベル）とヘッダ用の別名（表示用）を変えるとよい。  
+変えるには、「導出テーブル」を使う必要がある。  
+（導出テーブルは今後解説があるとのこと）  
+
+SQL では、テーブルにも別名 (Alias) をつけられる。  
+よくテーブルに短い別名を付けて、その別名を列名の接頭辞として使うことがある。  
+
+1. SQLのキーワード（例：selectなど）と同じ列名を使う場合、  
+   キーワードを使おうとしているのではないことを分かりやすくするため。  
+2. 複数のテーブルを扱う場合、どのテーブルなのか明示するため。 
+
+```sql
+select m.id, m.name, m.height
+from members as m 
+where m.gender = 'F'
+order by m.id;
+```
+
+なお、where句では別名は参照できず、order by句では参照できる。  
+
+<br>
+
+#### 演算子  
+---
+
+- 「+」「-」「*」「/」の四則演算
+- 「=」といった等号や、「>」「>=」「<」 「<=」の比較など
+  - 「!=」は「<>」（等しくないを意味する）
+- 「(」「)」のようなカッコ類
+- 「in」「and」「join」「is nulll」などの単語
+
+注意すべき点として、

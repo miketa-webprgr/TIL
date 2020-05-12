@@ -1,4 +1,5 @@
-## 第II部 初級編
+## 第II部 初級編（partI)  
+第４章 select文, 第５章 group by 句, 第６章 便利な機能  
 ---
 <br>
 
@@ -24,7 +25,7 @@ from members;
 なお、列名を選択して出力することも可能。  
 
 ```sql
-# genderとnameは列名
+-- genderとnameは列名
 select gender, name
 from members;
 ```
@@ -41,7 +42,7 @@ where name = 'ミカサ';
 where句では、andやorなどを使うこともできる。
 
 ```sql
-# 該当部分のみ抜粋
+-- 該当部分のみ抜粋
 where gender = 'M' and height >= 170;
 ```
 
@@ -60,7 +61,7 @@ order by name;
 並び替える場合、重複しない値を使うこと。  
 
 ```sql
-# 背が高い順に並べ、同じ場合はidが小さい順に並べる
+-- 背が高い順に並べ、同じ場合はidが小さい順に並べる
 order by height desc, id;
 ```
 
@@ -69,7 +70,7 @@ order by height desc, id;
 limitとoffsetを組み合わせる場合、まずoffsetが適用される。  
 
 ```sql
-# 先頭から３行スキップされ、４行目だけを出力する
+-- 先頭から３行スキップされ、４行目だけを出力する
 select * from members order by id
 limit 1 offset 3;
 ```
@@ -141,7 +142,7 @@ count(height) = 身長がnullでないものをカウントする
 having句を使うと、グループをフィルターできる。
 
 ```sql
-# フィルター前
+-- フィルター前
 
  gender | max | min | sum | count | to_char 
 --------+-----+-----+-----+-------+---------
@@ -153,7 +154,7 @@ having句を使うと、グループをフィルターできる。
 having avg(height) > 168　を加えると、以下のとおり。  
 
 ```sql
-# ファイルター後
+-- フィルター後
 
  gender | max | min | sum | count | to_char 
 --------+-----+-----+-----+-------+---------
@@ -180,7 +181,7 @@ having avg(height) > 168　を加えると、以下のとおり。
 例えば、以下はエラーが起きる。  
 
 ```sql
-# select genderとしてgroup by と合わせないとエラーになる
+-- select genderとしてgroup by と合わせないとエラーになる
 
 select name, avg(height)
 from members
@@ -190,8 +191,8 @@ group by gender;
 order byでも同様にselect句との組み合わせが悪いとエラーとなる。  
 
 ```sql
-# nameでは並びかえできない。
-# genderか、avg(height)でしか並べ替えられない。  
+-- nameでは並びかえできない。
+-- genderか、avg(height)でしか並べ替えられない。  
 
 select gender, avg(height)
 from members
@@ -275,4 +276,119 @@ order by m.id;
 - 「(」「)」のようなカッコ類
 - 「in」「and」「join」「is nulll」などの単語
 
-注意すべき点として、
+「and」「or」の注意すべき点として、「and」の優先順位が高いことが挙げられる。
+- 「x=1 or y=1 and z=1」は、「x=1」を満たしているもしくは「y=1とz=1」を満たしているか。
+
+<br>
+
+##### 文字列結合演算子：「||」
+---
+
+<br>
+
+##### パターンマッチ演算子：「like」
+---
+- 文字列があるパターンにマッチしているか調べて、true/falseを返す
+- 「%」や「_」を組み合わせることが多い
+- not likeという逆パターンもある
+- 大文字小文字を区別しない場合、ilikeを使う
+- whereなどと組み合わせることが多い
+
+```sql
+-- サで終わればtrue
+select 'ミカサ’ like '%サ';
+```
+
+```sql
+-- サで終わる３文字であればtrue
+select 'ミカサ' like '__サ';
+```
+
+```sql
+-- membersテーブルから「ン」で終わるデータを取得
+select name
+from members
+where name 'like %ン' ;
+```
+<br>
+
+##### in演算子
+---
+
+複数の値を列挙して、その中に探しているものが含まれているか探す。  
+含まれていないか確認する場合は、not inを使う。  
+
+```sql
+-- 7があればtrue 
+select 7 in (3,7,9);
+```
+
+<br>
+
+##### null
+---
+
+値がないこと。空であること。  
+
+なお、nullであることを条件に検索をかけても、そのデータは取得できない。  
+<b>nullを使った計算式はどれも結果がnullになる。</b>  
+
+is null と is not null を使うと、true/false が確認できる。  
+
+nullである場合に別の値に変換したい時、coalesce( )関数を使う。
+複数の引数を指定することができる。nullでない最初の引数が返される。  
+
+```sql
+-- xがnullなら0を返す
+coalesce(x, 0)
+
+-- xがnullでなければxを返す
+-- xがnullならyを返す
+-- yもnullならzを返す
+coalesce(x, y ,z)
+```
+
+```sql
+-- movie_idがnullのものを未登録に変換して出力
+
+select id, coalesce(movie_id||'','未登録') as movie_id, name, gender
+from characters order by id;
+
+ id  | movie_id |   name   | gender 
+-----+----------+----------+--------
+ 401 | 93       | ナウシカ | F
+ 402 | 94       | パズー   | M
+ 403 | 94       | シータ   | F
+ 404 | 94       | ムスカ   | M
+ 405 | 95       | さつき   | F
+ 406 | 95       | メイ     | F
+ 407 | 未登録   | クラリス | F
+(7 rows)
+```
+
+なお、null を使った論理演算式は、基本的に結果はnullだが、  
+「false and null」はfalse、「true or null」はtrueとなります。  
+
+<br>
+
+##### 複合値（Composite value）
+---
+
+数値や文字列や真偽値を集めて組にしたもの。  
+```sql
+(10,20,30)
+(10, 'A', true)
+```
+
+複合値は比較できる。
+データ型が異なっても比較できる。
+
+```sql
+-- まず、１番目の値で比較して判断
+-- １番目と２番目の値が同じである場合、２番目の値で比較
+-- 以下の例の場合、trueになる
+
+select(1,2,3)<(1,4,3);
+select
+('2019-03-11'::date, 9) > ('2019-03-10'::date, 9);
+```

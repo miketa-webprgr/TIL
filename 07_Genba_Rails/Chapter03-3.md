@@ -891,7 +891,6 @@ destroyメソッドを使用し、index.html.slimにredirectする。
     task.destroy
     redirect_to tasks_url, notice: "タスク「#{task.name}」を削除しました。"
   end
-
 ```
 
 <a href="削除１"><img src="https://i.gyazo.com/7b625402f6268281a60e782c7da62582.gif" alt="Image from Gyazo" width="550" border=1/></a>  

@@ -169,6 +169,242 @@ where x.avg_score < 70
 
 <br>
 
+#### 方針転換
+---
+
+進捗具合が芳しくなかったため、ここから勉強の進め方・ノートの取り方で方針転換を図る。
+
+従来
+1. 読みながらマークダウンでノートを取る
+2. 事例は逐一ノートを取りつつ、コマンドラインで試す 
+
+今後
+1. とりあえず概要が理解できるまで読む
+2. 逆にいえば、細かいところは理解しない
+3. そのあとメモをマークダウンで記載
+4. 重要だと思ったところだけコマンドラインで試す
+5. あとは、実戦で試す機会があるはずなので、割り切る！
+
+<br>
+
 #### サブクエリの中にサブクエリ
 ---
 
+サブクエリの中にサブクエリを使える。
+
+<br>
+
+#### exists 演算子
+---
+
+in 演算子であれば、以下に対してtrue/falseを判断し、結果を返す。
+
+```sql
+select 7 in (3,7,9);
+```
+
+exits演算子は、条件が合う行があるか調べて、１行でもあればtrueを返す。
+なければfalseを返す。
+
+select exits (サブクエリ)　といった形で使う。
+
+
+<br>
+
+#### all 演算子
+---
+
+サブクエリが返した値がすベて条件に合致していればtrueを返す。
+一つでも合致しなければfalseを返す。
+
+```sql
+--この場合、サブクエリの結果が全て40以下であればtrueを返す
+
+select 40 <= all(サブクエリ)
+```
+
+<br>
+
+#### any 演算子
+---
+
+any 演算子は、all 演算子と異なり、一つでも合致していればtrue。
+何も合致しなければfalseを返す。
+
+<br>
+
+#### with 句 (CTE)
+---
+
+with句は、サブクエリに別名（Alias）をつけるのに使う。
+以下のような形で使う。
+
+なお、列名も別名を命名できる。
+
+```sql
+with 別名（列名にも命名できる） as (サブクエリ)
+本体SQL
+```
+
+<br>
+
+#### with 句を使ったリファクタリング
+---
+
+リファクタリングとは、機能は同じままにコードを分かりやすく書き換えたりすること。
+リファクタリングでは、with句を活用するとよい。
+
+<br>
+
+#### サブクエリを一時テーブルとみなす
+---
+
+同じサブクエリを２回使う場合、with句を活用すると省略できる。
+
+<br>
+
+#### with 句の注意点
+---
+
+with句を使うと、SQLの動作が遅くなることがある。
+場合によっては、with句を使わずにまとめることも検討すべき。
+
+<br>
+
+#### with 句の練習
+---
+
+ここは重要であると思われるので、SQLで実践してみる。
+以下を解読＋リファクタリングしてみる。
+
+```sql
+-- 書き換え前
+-- 教科＋教科ごとの平均点のテーブルを作成し、そこから平均点が最も低いデータの行を抽出
+
+select subject, avg_score from (
+    select subject, avg(score) as avg_score
+    from test_scores
+    group by subject
+) avg_scores
+-- avg_scores = 教科＋教科ごとの平均点のテーブル
+where avg_score = (
+select min(x.avg_score) from (
+select subject, avg(score) as avg_score from test_scores
+group by subject
+)x );
+-- x = avg_scores
+```
+
+```sql
+-- 書き換え後
+
+with avg_scores(subject, avg_score) as (
+    select subject, avg(score) as avg_score
+    from test_scores
+    group by subject
+) 
+-- avg_scores = 教科＋教科ごとの平均点のテーブル
+
+select subject, avg_score
+from avg_scores
+where avg_score = (
+    select min(avg_score) from avg_scores
+);
+```
+
+<br>
+
+### ● 第８章 テーブル結合（基礎編）
+---
+
+<br>
+
+#### from句とwhere句でテーブル結合
+---
+
+以下のようなコードにより、
+
+- moviesテーブルに格納されている４行のデータ
+- charactersテーブルに格納されている７行のデータ
+
+以上が掛け合わされて、２８行のテーブルが出力される。
+
+```sql
+select movies.*, characters.*
+from movies, characters;
+```
+
+ここで、主キーであるmovies_idでwhere句を使って一致させることにより、
+正しい映画とキャラクターの正しい組み合わせのテーブルが出力される。
+
+```sql
+select movies.*, characters.*
+from movies, characters;
+where movies.movies_id = characters.movies_id;
+```
+
+<br>
+
+#### join演算子
+---
+
+where句は、条件を指定するもの。
+ただ、組み合わせてテーブルを結合させるための条件と、そこからの抽出条件が混ざるとややこしい。
+
+そこでjoin演算子。
+joinを使い、足したいテーブルを記載。
+その後にonを使って、テーブル結合の条件を記載。
+
+以下が事例。
+
+```sql
+select *
+from movies m
+  join characters c 
+    on m.movie_id = c.movie_id
+where c.gender = 'F';
+```
+
+<br>
+
+#### テーブル結合によってできること
+---
+
+テーブル結合を使うと、あるテーブルを検索するときに別のテーブルを利用できる。
+
+<br>
+
+#### サブクエリとの比較
+---
+
+サブクエリを使っても、あるテーブルを検索するときに別のテーブルを利用できる。
+テーブル結合からサブクエリの書き換え、その逆の書き換えに慣れるとよい。
+
+<br>
+
+#### using
+---
+
+joinで結合する際には、onではなくusingが使える。
+usingを使うと短く書けるが、制限も出てくる。
+
+以下がonからusingへの書き換えの事例。
+
+```sql
+-- 書き換え前
+select *
+from movies m
+  join characters c 
+    on m.movie_id = c.movie_id
+
+-- 書き換え後
+select *
+from movies m
+  join characters c 
+    using (movie_id)
+```
+
+usingは、movie_idと〜idと~idが一致するときのような、
+複数の列名を使って結合するときには、省略がかなりできるため、その効果を発揮する。
+
+なお、natural joinというより省略した書き換えがあるらしい。

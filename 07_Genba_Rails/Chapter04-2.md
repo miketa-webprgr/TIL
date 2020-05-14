@@ -48,10 +48,11 @@ SessionはAPサーバー側で用意した仕組みなのに対し、Cookieは�
 
 [ブログ: Cookieとセッションについてわかりやすく解説します！](https://umaroidblog.com/webtechnology1)  
 
-要は、cookieは見られてしまう可能性があるので危険。
-cookieを通してやりとりをするのは、単純な受付番号札だけにして、それはセッション（一連のやり取り）が終わったら破棄。  
+要は、cookieは見られてしまう可能性があるので危険。  
+cookieを通してやりとりをするのは、単純な受付番号札だけにする。  
+それはセッション（一連のやり取り）が終わったら破棄。  
 パスワードなどの重要な情報はcookieでやり取りしない。ブラウザ側で保存しない。  
-これでセッション中にcookieが盗まれない限り、安全性は担保される。
+これでセッション中にcookieが盗まれない限り、安全性は担保される。  
 
 という仕組みらしい。  
 
@@ -164,7 +165,8 @@ Userモデルを作成したので、どのように利用者登録をさせる�
 今回は、２の方法で行っていく。  
 具体的には、ユーザー管理機能を追加し、その画面からユーザーの登録・編集等が行えるようにする。  
 
-ユーザー管理機能は、/admin/usersで始まるURLで提供し、adminというフラグがtrueのユーザーだけ利用できるようにする。
+ユーザー管理機能は、/admin/usersで始まるURLで提供する。  
+adminというフラグがtrueのユーザーだけ利用できるようにする。  
 
 <br>
 
@@ -193,12 +195,12 @@ end
 ここでbooleanについて調べる。
 ブール型ともいうらしい。
 
-> boolean型とは、true(トゥルー) またfalse(フォールス)のどちらかのデータが
+> boolean型とは、true(トゥルー) またfalse(フォールス)のどちらかのデータが<br>
 > 必ず入ることが決まっているデータ型です。
 >
 > [Samurai Blog: 【Java入門】booleanとBooleanの使い方(初期値も解説)](https://www.sejuku.net/blog/41241)
 
-なお、こちらに設定についての解説があった。
+なお、こちらに設定についての解説があった。  
 [Qiita: Boolean型のカラムを追加するときは必ずデフォルト値を設定しよう](https://qiita.com/jnchito/items/a342b64cd998e5c4ef3d)
 
 細かいところはスルーしてしまったが、
@@ -228,8 +230,8 @@ ActiveRecordとかで見るやつというイメージしかない。
 [Qiita: rubyのクラスやらモジュールがモヤっとしている人へ](https://qiita.com/gogotanaka/items/c931360b3f6248959f89)  
 [Qiita: メソッドとクラスメソッドとインスタンスメソッドが曖昧だった](https://qiita.com/right1121/items/c74d350bab32113d4f3d)  
 
-なるほど。
-Adminというクラス（モジュール？）があって、その中のメソッドとしてUserControllerがある。
+なるほど。  
+Adminというクラス（モジュール？）があって、その中のメソッドとしてUserControllerがある。  
 そして、クラスメソッドだから、Admin. UsersControllerですぐ使用できる。  
 そんな感じだろうか。  
 
@@ -268,7 +270,7 @@ bin/rails g controller Admin::Users new edit show index
 
 ---
 
-そして、routes.rbの設定を行う。
+そして、routes.rbの設定を行う。  
 namespce以降からrootまでの記述が追加されたことを確認する。  
 
 ``` rb
@@ -288,7 +290,7 @@ Rails.application.routes.draw do
 end
 ```
 
-namespaceについて調べてみる。
+namespaceについて調べてみる。  
 [Qiita: Railsのroutingにおけるscope / namespace / module の違い](https://qiita.com/ryosuketter/items/9240d8c2561b5989f049)  
 
 とりあえず、URLもファイル構成も連動して指定のパスにしたいしたい場合、  
@@ -305,7 +307,7 @@ namespaceを使うとよいことが分かった。
   end
 ```
 
-ここでも、Chapter03でCRUD機能を実装したときと同様にresourcesを使う。
+ここでも、Chapter03でCRUD機能を実装したときと同様にresourcesを使う。  
 resourcesについては以下を改めて参照。  
 
 [Qiita：Rails resourcesメソッドとresourceメソッド](https://qiita.com/Tamitchao/items/6f45aa6daf1412b78d10)  
@@ -326,7 +328,7 @@ resourcesについては以下を改めて参照。
 
 さて、コントローラの設定を行う。
 
-ここでは、newアクション、createアクションを作成する。
+ここでは、newアクション、createアクションを作成する。  
 なお、showアクションへの「_url」は、rails routes コマンドにて確認できる。
 
 ``` rb
@@ -360,8 +362,8 @@ end
 
 ---
 
-次に、ユーザーの登録画面（users/new.html.slim）を作成する。
-Usersディレクトリ内のnew.html.slimを活用する。
+次に、ユーザーの登録画面（users/new.html.slim）を作成する。  
+Usersディレクトリ内のnew.html.slimを活用する。  
 
 ``` 
 
@@ -389,17 +391,17 @@ h1 ユーザーの新規登録
   = f.submit '登録する', class: 'btn btn-primary'
 ```
 
-まず、form_with modelの書き方であるが、改めて以下の記事を確認。
+まず、form_with modelの書き方であるが、改めて以下の記事を確認。  
 [Qiita: 【Rails】form_with/form_forについて【入門】](https://qiita.com/snskOgata/items/44d32a06045e6a52d11c)  
 
 今回は、form_withに複数モデルを渡す方法を知る必要があるので、該当部分を確認。
 
-ここでは、１つ目がインスタンス変数でないため「/admin」が必ずurlに付与され、
+ここでは、１つ目がインスタンス変数でないため「/admin」が必ずurlに付与され、  
 ２つ目がインスタント変数userなので、中身の有無で振り分け先のアクションを判別する。  
 
-userがない場合はcreateアクションへと飛び、ある場合はupdateアクションへと飛ぶ。
+userがない場合はcreateアクションへと飛び、ある場合はupdateアクションへと飛ぶ。  
 
-なお、作成画面は下記のとおりとなった。
+なお、作成画面は下記のとおりとなった。  
 
 <br>
 
@@ -411,13 +413,12 @@ userがない場合はcreateアクションへと飛び、ある場合はupdate�
 
 ---
 
-さて、その他のアクションやビュー画面を作成する。
+さて、その他のアクションやビュー画面を作成する。  
 ついては、アクションの流れを確認する。  
 
 <a href="https://gyazo.com/8a2f4803ccbe6cdfd183251e66d9dbff"><img src="https://i.gyazo.com/8a2f4803ccbe6cdfd183251e66d9dbff.png" alt="Image from Gyazo" width="550" border=1/></a>
 
-図にしてみたが、想像以上に難しい。。。
-分かりやすくなったのだろうか。
+図にしてみたが、分かりやすくなったのだろうか。  
 
 <br>
 
@@ -475,7 +476,7 @@ table.table.table-hover
 
 ```
 
-なお、rubyの勉強不足で分かっていなかったが、
+なお、rubyの勉強不足で分かっていなかったが、  
 「user.admin? ? 'あり' : 'なし'」の意味は、以下のとおり。  
 
 1. user.admin が true か確認
@@ -483,6 +484,8 @@ table.table.table-hover
 3. falseであれば「なし」と表示
 
 無事、実装完了。
+
+<br>
 
 <a href="https://gyazo.com/8faf56c342da4d29b3bacc5719c8c785"><img src="https://i.gyazo.com/8faf56c342da4d29b3bacc5719c8c785.png" alt="Image from Gyazo" width="600" border=1/></a>
 
@@ -492,7 +495,7 @@ table.table.table-hover
 
 ---
 
-次に、showアクションとビューの作成を行う。
+次に、showアクションとビューの作成を行う。  
 
 ``` rb
 # admin/users_controller.rb
@@ -537,8 +540,10 @@ table.table.table-hover
 = link_to '削除', [:admin, @user], method: :delete, data: { confirm: "タスク「#{@user.name}」を削除します。よろしいですか？"}, class: 'btn btn-danger'
 ```
 
-慣れてきたのか、それなりにすんなりと実装できた。
-ただ、白紙の状態からやれと言われると相当つらそうだ。。。
+慣れてきたのか、それなりにすんなりと実装できた。  
+ただ、白紙の状態からやれと言われると相当つらそうだ。。。  
+
+<br>
 
 <a href="https://gyazo.com/1c78ddbd53fd817f1403b1957586f013"><img src="https://i.gyazo.com/1c78ddbd53fd817f1403b1957586f013.png" alt="Image from Gyazo" width="550" border=1/></a>
 
@@ -600,9 +605,9 @@ def update
 end
 ```
 
-続いて、editビューを修正する。
-なお、newアクションにおいてもエラーを共通して表示したいので、
-パーシャルに以下を追記する。
+続いて、editビューを修正する。  
+なお、newアクションにおいてもエラーを共通して表示したいので、  
+パーシャルに以下を追記する。  
 
 ``` 
 # _form.html.slimに追記
@@ -643,8 +648,8 @@ end
 
 ---
 
-ユーザー管理画面を日本語化するため、以下を追記。
-インデントに誤りがあり、適用に時間がかかったが、日本語化に無事成功。
+ユーザー管理画面を日本語化するため、以下を追記。  
+インデントに誤りがあり、適用に時間がかかったが、日本語化に無事成功。  
 
 ```yml
 # ja.yml

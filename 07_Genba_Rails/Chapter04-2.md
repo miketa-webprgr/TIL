@@ -671,10 +671,108 @@ user:
 
 ---
 
-Gitで作業をしていたら、git reset --softとすべきところを勢いで滑って、
-git reset --hardのまま実行してしまい、ワーキングツリー内のファイルが吹き飛ぶ。
+Gitで作業をしていたら、git reset --softとすべきところを勢いで滑って、  
+git reset --hardのまま実行してしまい、ワーキングツリー内のファイルが吹き飛ぶ。  
 
-git reset --hard は慎重にやろう 笑
+git reset --hard は慎重にやろう 笑  
 
-あと、git resetする前には、とりあえずcommitしておくのが重要。
+あと、git resetする前には、とりあえずcommitしておくのが重要。  
 
+<br>
+
+#### データを絞り込む
+
+---
+
+RailsではDBからデータ検索するための充実した機能が備わっている。  
+検索するだけでなく、更新や削除時に対象を絞り込む際にも利用できる。  
+
+コード組み立ての際には以下を意識すること。  
+
+```rb
+# User部分 → 起点
+# where部分 → 絞り込みの条件
+# first部分 → 実行部分
+
+User.where(admin:true).first
+```
+
+誤解を恐れずに自分の言葉に置き換えると、  
+1. まずどこのデータを対象とするか決定する（user.tasksなどを起点とすることもできる）
+2. 次に条件を指定する（sqlコマンドのようなメソッドを使用）
+3. 処理メソッド（該当のものを取得、更新する、有無の確認など）
+
+<br>
+
+#### タスク一覧を作成日時の新しい順に並び替え（scopeを活用）
+
+---
+
+orderメソッドを活用する。  
+
+なお、クエリー用のメソッドについては、scopeを活用するとよい。  
+scopeを活用すると、カスタムのクエリー用メソッドとして活用できる。  
+
+```rb
+# models/task.rb
+# 以下を追記
+
+# recentメソッドというカスタムメソッドを登録
+scope :recent, -> { order(created_at: :desc) }
+```
+
+続いて、このカスタムメソッドを活用する。  
+これにより、作成日時が新しい順に並ぶようになった。  
+
+```rb
+# task_controller.rb
+# 修正をするindexアクション部分のみ記載
+
+  def index
+    # .recentを追記し、並び順を指定
+    @tasks = current_user.tasks.recent
+  end
+```
+
+<br>
+
+#### フィルタを使い、重複を避けるリファクタリング
+
+---
+
+
+taskコントローラ内にあるアクションのうち、４つのアクションに共通するコードがある。  
+
+```rb
+@task = current_user.tasks.find(params[:id])
+```
+
+フィルタを使って、該当のアクションの場合については以上のコードをセットするように設定する。  
+
+```rb
+#tasks_controller.rb
+
+# only内に記載のアクションの前に、set_taskメソッドを起動
+before_action :set_task, only: [:show, :edit, :updte, :destroy]
+
+〜これまでに作ってきたコード〜
+（共通するコードは@taskから始まるコードの行は削除）
+
+# set_taskメソッドを追記し、4つのアクションに共通するコードをここへ
+def set_task
+  @task = current_user.tasks.find(params[:id])
+end
+```
+
+<br>
+
+#### 詳しい説明に含まれるURLをリンクとして表示
+
+---
+
+rails_autolinkというgemを導入し、URLが自動でリンクされるように設定する。  
+なお、auto_link()で囲むだけでよい。  
+
+無事実装すると、以下のとおりリンクが投稿時にHTMLタグを付けなくとも自動的にリンクが生成される。
+
+<a href="https://gyazo.com/e3bc65cf3186ffd93c47313f87436163"><img src="https://i.gyazo.com/e3bc65cf3186ffd93c47313f87436163.png" alt="Image from Gyazo" width="600" border=1/></a>  

@@ -1,4 +1,4 @@
-## 現場Rails Chapter05-1 「テスト（自動テスト）」
+## 現場Rails Chapter05 「テストをはじめよう」
 
 ---
 
@@ -357,3 +357,420 @@ $ bundle exec rspec spec/system/tasks_spec.rb
 Finished in 12.59 seconds (files took 7.87 seconds to load)
 1 example, 0 failures
 ```
+
+<BR><BR>
+
+### Chapter05-9 「他のユーザーが作成したタスクが表示されないことの確認」  
+
+---
+
+続いて、ユーザーAではない、ユーザーBがログインした時にタスク一覧が表示されないか確認する。  
+そのためには、表示機能のテストケースを増やしてみる。  
+
+1. ユーザーAとユーザーAのタスクを作成する（済）
+2. ユーザーBを作成する
+3. ユーザーBでログインする
+4. ユーザーAのタスクが表示されていないことを確認する
+
+コードを書いていく。  
+
+```rb
+# spec/sysetem/tasks_spec.rb
+
+require 'rails_helper'
+
+describe 'タスク管理機能', type: :system do
+  describe '一覧表示機能' do
+    before do
+      # ユーザーAを作成しておく
+      user_a = FactoryBot.create(:user, name: 'ユーザーA', email: 'a@example.com')
+      # 作成者がユーザーAであるタスクを作成しておく
+      FactoryBot.create(:task, name: '最初のタスク', user: user_a)
+    end
+
+    context 'ユーザーAがログインしているとき' do
+      before do
+        # ユーザーAでログインする
+        visit login_path
+        fill_in 'メールアドレス', with: 'a@example.com'
+        fill_in 'パスワード', with: 'password'
+        click_button 'ログインする'
+      end
+
+      it 'ユーザーAが作成したタスクが表示される' do
+        # 作成済のタスクの名称が画面上に表示されていることを確認
+        expect(page).to have_content '最初のタスク'
+      end
+    end
+
+    # 新規で追加した部分
+    context 'ユーザーBがログインしているとき' do
+      before do
+        # ユーザーBを作成しておく
+        FactoryBot.create(:user, name: 'ユーザーB', email: 'b@example.com')
+        # ユーザーBでログインする
+        visit login_path
+        fill_in 'メールアドレス', with: 'b@example.com'
+        fill_in 'パスワード', with: 'password'
+        click_button 'ログインする'
+      end
+
+      it 'ユーザーAが作成したタスクが表示されない' do
+        # ユーザーAとは違い「have_no_content」という matcher を使用
+        expect(page).to have_no_content '最初のタスク'
+      end 
+    end
+  end
+end
+
+```
+
+```
+Finished in 4.14 seconds (files took 3.86 seconds to load)
+2 examples, 0 failures
+```
+
+珍しく、エラーもなく自動テスト成功！  
+
+<BR><BR>
+
+### Chapter05-10 「beforeを利用した共通化」  
+### Chapter05-11 「letを利用した共通化」  
+
+---
+
+次に、ユーザーAとユーザーBがログインしているときのbeforeの内容が類似しているため、  
+共通化の作業を行う。  
+
+具体的には、上の階層のbeforeに処理を書くことで実現できるとのこと。  
+
+とはいえ、ここで問題が発生。  
+なぜなら、ユーザーAやBをログインさせるプロセスは共有化できないからだ。
+
+ユーザーAさんについてテストするときはAさんをログインさせ、  
+BさんについてテストするときはBさんをログインさせる、というな形でテストを書き換える必要がある。  
+
+そのためには、letを使う必要がある。  
+letを使い、Aさんについて試すときはAさんに関するletを呼び出し、  
+Bさんについて試すときはBさんに関するletを呼び出すように設定する。  
+
+すると、コードは以下のとおりになる。  
+
+```rb
+# spec/sysetem/tasks_spec.rb
+
+require 'rails_helper'
+
+describe 'タスク管理機能', type: :system do
+  describe '一覧表示機能' do
+    # ここでletを使う
+    let(:user_a){ FactoryBot.create(:user, name: 'ユーザーA', email: 'a@example.com') }
+    let(:user_b){ FactoryBot.create(:user, name: 'ユーザーB', email: 'b@example.com') }
+
+    before do
+      # ユーザーAとBに関する部分を共通化した
+      # ここでlet(:user_a）が呼び出されて、ユーザーAが作成される。そして、タスクも作成される。  
+      FactoryBot.create(:task, name: '最初のタスク', user: user_a)
+      visit login_path
+      # letで指定されたユーザーでログイン
+      fill_in 'メールアドレス', with: login_user.email
+      fill_in 'パスワード', with: login_user.password
+      click_button 'ログインする'
+    end
+
+    context 'ユーザーAがログインしているとき' do
+      # ユーザーAでログイン（使用するログインユーザーをletで定義）
+      let(:login_user){ user_a }
+
+      it 'ユーザーAが作成したタスクが表示される' do
+        # 作成済のタスクの名称が画面上に表示されていることを確認
+        expect(page).to have_content '最初のタスク'
+      end
+    end
+
+    context 'ユーザーBがログインしているとき' do
+      # ユーザーBでログイン（使用するログインユーザーをletで定義）
+      # ここで初めて、ユーザーBが作成される
+      let(:login_user){ user_b }
+
+      it 'ユーザーAが作成したタスクが表示されない' do
+        # ユーザーAとは違い「have_no_content」という matcher を使用
+        expect(page).to have_no_content '最初のタスク'
+      end 
+    end
+  end
+end
+
+```
+
+試してみるが、以下のとおり。  
+
+```
+Failures:
+
+  1) タスク管理機能 一覧表示機能 ユーザーBがログインしているとき ユーザーAが作成したタスクが表示されない
+     Failure/Error: expect(page).to have_no_content '最初のタスク'
+       expected not to find text "最初のタスク" in "Taskleaf\nタスク一覧\nログアウト\nログインしました。\nタスク一覧\n新規登録\n名称 Created\n最初のタスク 2020-05-16 09:51:46 UTC 編集削除"
+     
+     [Screenshot]: tmp/screenshots/failures_r_spec_example_groups_nested_nested_b_ユーザーaが作成したタスクが表示されない_184.png
+
+     
+     # ./spec/system/tasks_spec.rb:37:in `block (4 levels) in <top (required)>'
+
+Finished in 7.16 seconds (files took 4.04 seconds to load)
+2 examples, 1 failure
+```
+
+以下のとおり、スクショまで出してくれるので感動ものである。  
+自動テスト、すごいな。。。  
+
+（ただし、今回は自動テストが意図したとおりに動いていないのだけれど）
+
+<a href="https://gyazo.com/af584d4ccf97c8923e199c71361599e1"><img src="https://i.gyazo.com/af584d4ccf97c8923e199c71361599e1.png" alt="Image from Gyazo" width="550" border=1/></a>
+
+なお、ここは本来、自動テストで失敗が起きてはいけないところ。  
+改めてRSpecのコードの確認をする。やはり誤りあり。  
+（なお、上記のコードは修正済のものを掲載）  
+
+コード修正後、以下のとおりの結果となった。  
+
+```
+Finished in 4.25 seconds (files took 3.43 seconds to load)
+2 examples, 0 failures
+```
+
+最初は、アプリの方にバグがあるのか、それとも自動テストが間違っているのか、  
+といった問題に悩まされそうだ。。。  
+
+特に、テストを少しずつ試さずにアプリ開発を進めてしまうと、アプリもバグっているし、  
+自動テストもバグっているし、何がなんだか分からない!!!! と言った状態になりそう。。。笑  
+
+自作アプリの際には、こまめに確認を行っていきたい。  
+
+
+<BR><BR>
+
+### Chapter05-12 「詳細表示機能のSpecを追加する」  
+
+---
+
+自動テストの機能を追加していく。  
+続いて、詳細表示機能のSpecも作ってみる。  
+
+```rb
+# spec/system/tasks_spec.rb
+
+require 'rails_helper'
+
+describe 'タスク管理機能', type: :system do
+  describe '一覧表示機能' do
+    # ここでletを使う
+    let(:user_a){ FactoryBot.create(:user, name: 'ユーザーA', email: 'a@example.com') }
+    let(:user_b){ FactoryBot.create(:user, name: 'ユーザーB', email: 'b@example.com') }
+    # beforeの前に呼び出したいため、「let!」を使用
+    let!(:task_a){ FactoryBot.create(:task, name: '最初のタスク', user: user_a) }
+
+    〜 省略 〜
+
+    describe '詳細表示機能' do
+      context 'ユーザーAがログインしているとき' do
+        # ユーザーAでログイン（使用するログインユーザーをletで定義）
+        let(:login_user){ user_a }
+      
+      before do
+        # task_aをユーザーAのタスクとして作成し、task_pathにログイン
+        visit task_path(task_a)
+      end
+
+      it 'ユーザーAが作成したタスクが表示される' do
+        expect(page).to have_content '最初のタスク'
+      end 
+    end 
+    
+  end
+end
+
+```
+
+試してみる。  
+すると、無事３つの機能について自動テストを行うことができ、失敗はなしとなった。  
+
+```
+Finished in 5.19 seconds (files took 3.79 seconds to load)
+3 examples, 0 failures
+```
+
+<BR><BR>
+
+### Chapter05-13 「shared_examplesを利用する」  
+
+---
+
+続いて、ユーザーAの一覧表示機能及び詳細表示機能のコードが同一であるため、  
+shared_examplesを使って、itで始まるコードの共通化を行う。  
+
+なお、共通化するのは下記のコード。  
+
+```rb
+it 'ユーザーAが作成したタスクが表示される' do
+  # 作成済のタスクの名称が画面上に表示されていることを確認
+  expect(page).to have_content '最初のタスク'
+end
+```
+
+具体的には「shared_examples_for ’タイトル’」で囲み、  
+その後に「it_behaves_like ’タイトル’」で使用する。  
+
+共通化した後、コードは下記のとおりとなる。  
+
+```rb
+# spec/system/tasks_spec.rb
+# 該当部分のみ抜粋
+
+  # shared_examples_for を使って it から始まるコードを共通化する
+  shared_examples_for 'ユーザーAが作成したタスクが表示される' do
+    it { expect(page).to have_content '最初のタスク' }
+  end
+
+  describe '一覧表示機能' do
+    context 'ユーザーAがログインしているとき' do
+      # ユーザーAでログイン（使用するログインユーザーをletで定義）
+      let(:login_user){ user_a }
+
+      # shared〜で囲んだ部分をここで使う
+      it_behaves_like 'ユーザーAが作成したタスクが表示される'
+
+    end
+
+    context 'ユーザーBがログインしているとき' do
+      〜 省略 〜
+    end
+  end
+
+  describe '詳細表示機能' do
+    context 'ユーザーAがログインしているとき' do
+      let(:login_user){ user_a }
+    
+      before do
+        visit task_path(task_a)
+      end
+
+      # shared〜で囲んだ部分をここで使う
+      it_behaves_like 'ユーザーAが作成したタスクが表示される'
+
+    end   
+  end
+end
+```
+
+自動テストのエラーは起きず、無事共通化に成功。  
+なお、beforeやletなどをまとめる機能として、shared context という機能がある。  
+
+<BR><BR>
+
+### Chapter05-14 「新規作成機能のSystem Spec」  
+### Chapter05-15 「Letの上書き」  
+
+---
+
+続いて、以下のタスクを新規で作った場合、うまくバリデーションが機能するか確認するための自動テストを作成する。  
+- 「掃除をする」というタスク（文字あり）
+- 「　」というタスク（文字なし、つまりnil）
+
+```rb
+# spec/system/tasks_spec.rb
+# 該当部分のみ抜粋
+
+  describe '新規作成機能' do
+    let(:login_user){ user_a }
+
+    before do
+      # タスク新規作成画面へ
+      visit new_task_path
+      # 後に出てくるletから、タスクの内容を持ってくる
+      fill_in '名称', with: task_name
+      click_button '登録する'
+    end
+
+    context '新規作成画面で名称を入力したとき' do
+      let(:task_name){'掃除をする'}
+
+      # have_selector を使って、Flashメッセージに「掃除をする」と言う文字が含まれるか確認
+      it '正常に登録される' do
+        expect(page).to have_selector '.alert-success', text: '掃除をする'
+      end
+
+    end
+
+    context '新規作成画面で名称を入力しなかったとき' do
+      let(:task_name){''}
+
+      # have_selector を使って、Flashメッセージに「掃除をする」と言う文字が含まれるか確認
+      it 'エラーになる' do
+        within '#error_explanation' do
+          expect(page).to have_content '名称を入力してください'
+        end
+      end
+
+    end
+
+  end
+
+end
+
+```
+
+本来、エラーが発生してはいけないはずだが、１件発生。  
+
+```rb
+Failures:
+
+  1) タスク管理機能 新規作成機能 新規作成画面で名称を入力しなかったとき エラーになる
+     Failure/Error:
+       within '#error_explanation' do
+         expect(page).to have_content '名称を入力してください'
+       end
+     
+     Capybara::ElementNotFound:
+       Unable to find css "#error_explanation"
+     
+     [Screenshot]: tmp/screenshots/failures_r_spec_example_groups_nested_nested_3_nested_2_エラーになる_573.png
+
+     
+     # ./spec/system/tasks_spec.rb:86:in `block (4 levels) in <top (required)>'
+```
+
+説明もしてくれるので、非常に分かりやすい。  
+エラーとなったスクショを確認。  
+
+<a href="https://gyazo.com/fd8bb817d0142899384fa8606b011028"><img src="https://i.gyazo.com/fd8bb817d0142899384fa8606b011028.png" alt="Image from Gyazo" width="550" border=1/></a>  
+
+こんなにガッツリ、「名称を入力してください」とあるにもかかわらず、  
+エラーとして認識されるのは、エラーメッセージに記載のとおり、  
+「Unable to find css "#error_explanation"」ということだから。  
+
+じっくり見ていくと、コードの記入漏れを発見。  
+slimだとidを書く際に「#」をつけるとこの時に初めて知る。  
+コメントじゃなかったんですね。。。  
+
+そこを修正すると、無事エラーは消えた。  
+
+なお、以上のコードでは、let(:task_name)が２回出てくるが、その箇所については  
+上書きされているとの説明があった。  
+
+
+
+
+<BR><BR>
+
+### Chapter05-16 「RSpecが失敗したときの調査方法」  
+
+---
+
+幸か不幸か、これまでエラーに遭遇してきていたので、  
+既にもう実践してきたような内容が掲載されていた。  
+
+Rails Console を使う発想はなかったので、モデル関係のエラーが予想されるような  
+場合などには積極的に活用していきたい。  
+
+

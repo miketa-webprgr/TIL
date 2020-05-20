@@ -15,6 +15,11 @@
 1. newアクションからcreateアクションの間（新規作成画面から登録処理まで）
 2. editアクションからupdateアクションの間（編集画面から更新処理まで）
 
+<br>
+
+#### ルーティングについて検討する
+---
+
 該当箇所のルーティングを確認する。  
 
 ```
@@ -30,39 +35,71 @@
                   DELETE /tasks/:id(.:format)                 tasks#destroy
 ```
 
-では、confirmアクションで何を行うのか整理する。  
-1. 編集内容を反映したパラメータを受け取る。（パラメータを使ってビューで反映）
-2. validメソッドにて内容を検証し、エラーがあれば元の画面にエラーを表示する
+ルーティングについて、どこにconfirm_newとconfirm_editを所属させるか検討する。  
+現場railsに従って、tasks/new/confirmにtasks#confirm_newアクションを作成したい。  
+また、tasks/:id/confirmにtasks#confirm_editアクションを作成したい。  
 
 <br>
 
-#### 確認画面を表示するアクションを追加する
+#### 必要な作業を洗い出しする
 ---
 
-tasks_controller.rbに以下のとおり記載。
+では、confirm_newアクション関係の作業として、何を行う必要があるのか整理する。  
+1. newアクションにて新規画面を表示
+2. createアクションではなく、confirm_newアクションに飛ばすように変更（new画面のリンクを修正）
+3. confirm_newの画面を表示（confirm_newの画面を作成、パラメータ格納についてコントローラに記入）
+4. confirm_newにてエラー検証を行う（コントローラに記入）
+5. エラーがある場合、newアクションに飛ばす。new画面にてエラーを表示（new画面にてエラー表示させるよう修正）
+6. エラーがない場合、new画面で入力されたパラメータをcreateアクションに飛ばす（confirm_new画面のリンクを修正）
 
-```rb
-# tasks_controller.rbにconfirm?newとconfirm_editアクションを追加する
+では、confirm_editアクションで関係の作業として、何を行う必要があるのか整理する。  
+1. editアクションにて編集画面を表示
+2. updateアクションではなく、confirm_editアクションに飛ばすように変更（edit画面のリンクを修正）
+3. confirm_editの画面を表示（confirm_editの画面を作成、パラメータ格納についてコントローラに記入）
+4. confirm_editにてエラー検証を行う（コントローラに記入）
+5. エラーがある場合、editアクションに飛ばす。edit画面にてエラーを表示（edit画面にてエラー表示させるよう修正）
+6. エラーがない場合、edit画面で入力されたパラメータをupdateアクションに飛ばす（confirm_edit画面のリンクを修正）
 
-def confirm_new
-  # current_user.tasks部分はassociation
-  @task = current_user.tasks.new(task_params)
-  # validメソッドにてエラーがないか検証
-  render :new unless @task.valid?
-end
+その他、DRY（Don't Repeat Yourself）に出来るところは、積極的に挑戦する。（ただし、無理はしない）  
 
-def confirm_edit
-  # current_user.tasks部分はassociation
-  # なお、set_taskメソッドと同じ内容のため、before_actionでまとめて記載
-  @task = current_user.tasks.find(params[:id])
-  # validメソッドにてエラーがないか検証
-  render :new unless @task.valid?
-end
+<br>
 
-```
+#### エラーにハマって学んだこと
+---
 
-validメソッドについては以下で確認。  
-[Railsガイド 1\.4 valid?とinvalid?](https://railsguides.jp/active_record_validations.html#valid-questionmark%E3%81%A8invalid-questionmark)  
+上記にて、ステップを細かく記載したが、当初は作業の洗い出しに漏れや誤りが発生した。  
+
+そのこと自体は問題ではないが、そこから安易にコードの修正や情報検索ばかりに走ってしまい、  
+結局、行き当たりばったりのトライアンドエラーの繰り返しになってしまった。
+
+プログラムは、どこか数学や実験に似ている。  
+少なくとも慣れるまでは、手順を踏んでコツコツとやるのが重要だ。  
+
+自分の脳味噌には限界がある。
+このことをよく肝に命じて、何をやっているかきちんと記録していくこと。  
+（どうせ大概の場合、またエラーになるのだから）  
+
+躍起になってガチャガチャやり過ぎて、自分を失ってしまう前に冷静になること。  
+時間がかかりそうでも、分析して、全体の見取り図を作っていくこと。  
+
+チェリー本の著者である伊藤さんのQiita記事を発見したが、  
+今後エラーに遭遇して、解決の見込みが立たなければ、即この記事を眺めること。  
+
+[プログラミング初心者歓迎！「エラーが出ました。どうすればいいですか？」から卒業するための基本と極意（解説動画付き） \- Qiita](https://qiita.com/jnchito/items/056325421b7e36f02335)  
+
+<br>
+
+
+#### ルーティングを設定する
+---
+
+まず、目標を確認。  
+
+URL        tasks/new/confirm  
+アクション   tasks#confirm_new  
+
+URL        tasks/:id/confirm  
+アクション   tasks#confirm_edit  
 
 なお、routes.rbには以下のとおり記載。  
 
@@ -70,12 +107,9 @@ validメソッドについては以下で確認。
 # routes.rb
 # 該当部分のみ記載
 
-  # resources :tasks を修正し、その下部ディエレクトリにconfirm_newとconfirm_editを追加
   resources :tasks do
-    # 現場railsでは、confirm_newアクションしかなかったため、member do がなく、
-    # on: :new を足すような形で省略されていた
+    post :confirm, action: :confirm_new, on: :new
     member do
-      post :confirm, action: :confirm_new
       patch :confirm, action: :confirm_edit
     end
   end
@@ -88,20 +122,28 @@ validメソッドについては以下で確認。
 [railsのroutes\.rbのmemberとcollectionの違いをわかりやすく解説してみた。〜rails初心者から中級者へ〜 \- Qiita](https://qiita.com/hirokihello/items/fa82863ab10a3052d2ff#comments)  
 
 以下のとおり、ルーティング設定が完了した。  
+confirm_editアクションのパス名がconfirm_taskで気持ち悪い感じがするが、今回はスルーすることとする。  
 
 ```
-confirm_task    POST   /tasks/:id/confirm(.:format)    tasks#confirm_new
-                PATCH  /tasks/:id/confirm(:format)     tasks#confirm_edit
+confirm_new_task   POST   /tasks/new/confirm(.:format)    tasks#confirm_new
+    confirm_task   PATCH  /tasks/:id/confirm(.:format)    tasks#confirm_edit
 ```
 
-続いて、confirm_taskのビューを作成する。  
+<br>
 
-```rb
-### 作業中 ###
+#### 作業１・２・３
+---
 
-```
+先ほど書いた作業リストの内、１〜３を行う。
 
-また、新規登録画面からの遷移先を変更する。  
-createアクションではなく、confirm_newアクションに移動するよう設定変更する。
+confirm_new  
+1. newアクションにて新規画面を表示
+2. createアクションではなく、confirm_newアクションに飛ばすように変更（new画面のリンクを修正）
+3. confirm_newの画面を表示（confirm_newの画面を作成、パラメータ格納についてコントローラに記入）
 
+confirm_edit  
+1. editアクションにて編集画面を表示
+2. updateアクションではなく、confirm_editアクションに飛ばすように変更（edit画面のリンクを修正）
+3. confirm_editの画面を表示（confirm_editの画面を作成、パラメータ格納についてコントローラに記入）
 
+【続きは明日（なお、コード自体はそれなりに書けている）】  

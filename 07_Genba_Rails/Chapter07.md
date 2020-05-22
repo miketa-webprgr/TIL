@@ -395,3 +395,185 @@ class TasksController < ApplicationController
     redirect_to tasks_url, notice: "タスク「#{@task.name}」を更新しました。"
   end
 ```
+
+<br>
+
+#### 実装後の画面
+---
+
+新規タスク作成フローだけでなく、既存タスク修正フローにおいて、確認画面を挟むことができた。  
+以下がその確認画面のスクリーンショットである。
+
+なお、戻るボタンも実装され、以下のとおりとなった。
+1. 「洗濯をすり」→「洗濯をする」として確認画面に遷移
+2. 確認画面で戻るボタンを押す
+3. 修正しようとした内容が引き継がれるので「洗濯をする」の内容が残っている
+
+[![Image from Gyazo](https://i.gyazo.com/5453ee22f1ec47578f1446283291450a.png)](https://gyazo.com/5453ee22f1ec47578f1446283291450a)  
+
+<BR><BR>
+
+### Chapter07-2 「一覧画面に検索機能を追加する（Ransack）」  
+
+---
+
+Ransackというgemをインストールするため、Gemfileに書き加え、bundleを実行する。
+実行した後、ransackメソッドが追加されるので、活用して検索機能を実装する。  
+
+<br>
+
+#### 名称による検索
+---
+
+手順についてまず確認する。  
+1. search_formを作成し、検索データを飛ばせるようにする。
+2. 検索データは、ransackメソッドがあるアクションに飛ぶ？  
+（もしくは、index.html.slimでsearch_formを作ると、indexアクションに飛ぶようになっている？）  
+3. 該当アクションにてパラメータを格納する。
+4. そのパラメータがindex.html.slimで表示される。
+
+謎が多いが、とりあえずはスルーすることとする。  
+
+<br>
+
+#### 検索フォームを作成する
+---
+
+Ransackの場合、search_form_forを使う。  
+name_contとすると、nameに検索文字列を含むものを検索する。  
+
+```
+# index.html.slim
+# 該当箇所のみ記述
+
+= search_form_for @q, class: 'mb-5' do |f|
+  .form-group.row
+    = f.label :name_cont, '名称', class: 'col-sm2 col-form-label'
+    .col-sm-10
+      = f.search_field :name_cont, class: 'form-control'
+  .fom-group
+    = f.submit class: 'btn btn-outline-primary'
+```
+
+<br>
+
+#### コントローラに追記する
+---
+
+ransackメソッドを使う。  
+
+```rb
+# tasks_controller.rb
+# indexアクションのみ記載
+
+  def index
+    # ransackメソッドを使い、インスタンス変数qに検索値paramsが格納される
+    @q = current_user.tasks.ransack(params[:q])
+    # resultメソッドにより、検索結果が表示される
+    # 検索していない時は、全てのデータが表示されるのは、<% %>で検索された結果が表示されているから？
+    @tasks = @q.result(distinct: true).recent
+  end
+
+```
+
+<br>
+
+#### 実装結果
+---
+
+すごい！
+
+<a href="https://gyazo.com/ff795ce9f9672cfeab31a361976cf494"><img src="https://i.gyazo.com/ff795ce9f9672cfeab31a361976cf494.gif" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<br>
+
+#### 登録日時による検索
+---
+
+登録日時以降のタスクのみを表示する機能を実装する。  
+gteqマッチャーを利用する。  
+
+```
+# index.html.slim
+# 該当箇所のみ記述
+
+= search_form_for @q, class: 'mb-5' do |f|
+
+  ~ 名称での検索フォーム ~
+
+  .form-group.row
+    = f.label :created_at_gteq, '登録日時', class: 'col-sm2 col-form-label'
+    .col-sm-10
+     = f.search_field :created_at_gteq, class: 'form-control'
+```
+
+<a href="https://gyazo.com/04efe00dbaab44fe94ad6da4f3d954e6"><img src="https://i.gyazo.com/04efe00dbaab44fe94ad6da4f3d954e6.gif" alt="Image from Gyazo" width="600" border=1/></a>
+
+<br>
+
+#### 検索条件を絞る
+---
+
+現状のままだと、パラメータが加工されると、他のカラムを使った検索もできてしまう。  
+そこで以下のような実装をモデルに追加するとよい。  
+
+Strong Parametersを実装するのと同じ効果があるとのことだが、  
+Strong Parametersで仕様変更に対応していくのは労力が大きいとのこと。  
+
+```rb
+# models/task.rb
+
+  def self.ransackable_attributes(auth_object = nil)
+    %w[name created_at]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    []
+  end
+```
+
+<BR><BR>
+
+### Chapter07-3 「一覧画面にソート機能を追加する」  
+
+---
+
+Ransackのヘルパーメソッドであるsort_lilnkヘルパーを使う。  
+なお、ヘルパーが機能するように、登録日時順にタスクを並べるコントローラ上の設定を解除する。  
+（具体的には、recentメソッドの削除）
+
+```rb
+# tasks_controller.rb
+# indexアクションのみ記載
+
+  def index
+    @q = current_user.tasks.ransack(params[:q])
+    # 最後の.recentを削除
+    @tasks = @q.result(distinct: true)
+  end
+
+```
+<br>
+
+```
+# index.html.slim
+# 該当箇所であるth部分のみ記述
+
+.mb-3
+table.table.table-hover
+  thead.thead-default
+    tr
+      th= Task.human_attribute_name(:name)
+      
+      # 元々は「th= Task.human_attribute_name(:created_at)」だった
+      th= sort_link(@q, :created_at, default_order: :desc)
+```
+
+なお、名称と登録日時の両方についてソートできるような機能の実装も簡単にできるのかと思いきや、  
+手順が複雑そうだったので、自作アプリ等にチャレンジする時の課題としたい。  
+
+以下に、詳細な機能について記載があった。  
+
+[Ransackで簡単に検索フォームを作る73のレシピ \- 猫Rails](http://nekorails.hatenablog.com/entry/2017/05/31/173925#%E3%82%BD%E3%83%BC%E3%83%88%E3%81%AE%E3%82%BB%E3%83%AC%E3%82%AF%E3%83%88%E3%83%9C%E3%83%83%E3%82%AF%E3%82%B9%E3%82%922%E3%81%A4%E7%94%A8%E6%84%8F%E3%81%99%E3%82%8B)  
+
+

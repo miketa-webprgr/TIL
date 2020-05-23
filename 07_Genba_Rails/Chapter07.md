@@ -576,4 +576,451 @@ table.table.table-hover
 
 [Ransackで簡単に検索フォームを作る73のレシピ \- 猫Rails](http://nekorails.hatenablog.com/entry/2017/05/31/173925#%E3%82%BD%E3%83%BC%E3%83%88%E3%81%AE%E3%82%BB%E3%83%AC%E3%82%AF%E3%83%88%E3%83%9C%E3%83%83%E3%82%AF%E3%82%B9%E3%82%922%E3%81%A4%E7%94%A8%E6%84%8F%E3%81%99%E3%82%8B)  
 
+<BR><BR>
 
+### Chapter07-4 「メールを送る」  
+
+---
+
+<br>
+
+#### メイラーのgenerate
+---
+
+Railsには、Action Mailer という仕組みがある。  
+メールはコントローラに似ており、コントローラがテンプレートを通じて画面を出力するように、  
+メイラーはテンプレートを通じてメールを作成・送信する。  
+
+以下のコマンドで簡単にメイラーが作れる。
+
+```
+bin/rails g mailer TaskMailer
+```
+
+<br>
+
+#### 実行手順
+---
+
+タスクを新規で作成した場合、メールが自動で送られるようにする。  
+createアクションにて新規タスクはDBに保存されるが、その際に保存される  
+インスタンス変数taskを持ってきて、メールのテンプレートに流し込む。  
+
+これから行う作業は下記のとおりである。  
+
+1. mailers/task_mailer.rbにコードを追加し、メイラーを実装する。
+2. メイラーが起動した際に読み込むテンプレートを実装する。
+3. メール送信処理をコントローラに実装する。
+
+
+<br>
+
+#### メイラーの実装
+---
+
+メイラーの実装は下記のとおりとなる。  
+
+```rb
+# mailers/task_mailer.rb
+
+class TaskMailer < ApplicationMailer
+  # アプリから複数種類のメールを送信する場合、どのメールのfromも以下のアドレスに固定する
+  default from: 'taskleaf@example.com'
+
+  # createアクションから、インスタンス変数である @task を持ってくる
+  def creation_email(task)
+    # メールのテンプレートで使うため、@taskに改めて格納する
+    @task = task
+    mail(
+      subject: 'タスク作成完了メール',
+      to: 'user@example.com',
+    )
+  end
+end
+```
+
+<br>
+
+#### テンプレートの実装
+---
+
+テンプレートのパスは、特に指定しない場合、メイラーのクラス名とメソッド名から推測される。  
+今回は、cration_email.email.拡張子となる。  
+
+受信者の環境に配慮して、HTML形式及びテキスト形式のメール、両方を用意する。  
+
+```
+# creation_email.html.slim
+# HTML形式のメールテンプレート
+
+| 以下のタスクを作成しました
+
+ul
+  li
+    | 名称：
+    = @task.name
+  li
+    | 詳しい説明：
+    =simple_format(@task.description)
+
+```
+
+```
+# creation_email.text.slim
+# TEXT形式のメールテンプレート
+
+| 以下のタスクを作成しました
+= "`\n"
+| 名称：
+= @task.name
+= "`\n"
+| 詳しい説明：
+= "`\n"
+= @task.description
+
+```
+
+<br>
+
+#### メール送信処理
+---
+
+メール送信処理を追加する。
+コード１行を追加するのみである。  
+
+```rb
+# tasks_controller.rb
+# creationアクションのみ記載
+
+ def create
+    @task = Task.new(task_params.merge(user_id: current_user.id))
+
+    if params[:back].present?
+      render :new
+      return
+    end
+
+    if @task.save
+      # 以下のコードを追加し、deliver.nowメソッドで即時送信するよう設定（deliver_laterというメソッドもある）
+      TaskMailer.creation_email(@task).deliver_now
+      redirect_to @task, notice: "タスク「#{@task.name}」を登録しました。"
+    else
+      render :new
+    end
+
+  end
+```
+
+<br>
+
+#### 動作確認
+---
+
+mailcatcherというgemを使い、動作確認を行う。
+mailmcatcherを使うと、シンプルなsmtpサーバーを立てて、  
+送信されたメールをブラウザで確認できるようになる。  
+
+```
+# bundle からのインストールは正常に作動しないことがある
+gem install mailcatcher
+```
+
+次に、config/environments/development.rbにてSMTPサーバー利用の設定を行う。  
+
+```rb
+# config/environments/development.rb
+# 該当部分のみ記載
+
+# Don't care if the mailer can't send.
+config.action_mailer.raise_delivery_errors = false
+# メーラー設定のため、以下２行を追記
+config.action_mailer.delivery_method = :smtp
+config.action_mailer.smtp_settings = { address: '127.0.0.1', port: 1025 }
+```
+
+そして、コマンドでmailcatcherを起動させ、Taskleafアプリを起動させる。  
+新規タスクを登録すると、以下のとおりmailcatcherで送信メールを確認できる。  
+
+<a href="https://gyazo.com/ab4e7598530b3afe94f1b42c8a2ce521"><img src="https://i.gyazo.com/ab4e7598530b3afe94f1b42c8a2ce521.png" alt="Image from Gyazo" width="600" border=1/></a>  
+<a href="https://gyazo.com/b7f6dfd38317fbdebad3742051dc3ba1"><img src="https://i.gyazo.com/b7f6dfd38317fbdebad3742051dc3ba1.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<br>
+
+#### メイラーのテスト
+---
+
+RSpecを使い、メイラーが想定どおり動いているか確認できるようにする。  
+
+まず、ディレクトリを作成する。
+
+```
+mkdir spec/mailers
+```
+
+そして、RSpecの中身を記述する。  
+
+```rb
+# spec/mailers/task_mailer_spec.rb
+
+RSpec.describe TaskMailer, type: :mailer do
+
+  let(:task){ FactoryBot.create(:task, name: 'メイラーSpecを書く', description: '送信したメールの内容を確認します')}
+
+  let(:text_body) do
+    part = mail.body.parts.detect { |part| part.content_type == 'text/plain; charset=UTF-8' }
+    part.body.raw_source
+  end
+  
+  let(:html_body) do
+    part = mail.body.parts.detect { |part| part.content_type == 'text/html; charset=UTF-8'}
+    part.body.raw_source
+  end
+
+  describe '#creation_email' do
+    let(:mail){ TaskMailer.creation_email(task) }
+
+    it '想定どおりのメールが生成されている' do
+      # ヘッダ
+      expect(mail.subject).to eq('タスク作成完了メール')
+      expect(mail.to).to eq(['user@example.com'])
+      expect(mail.from).to eq(['taskleaf@example.com']) 
+
+      # text形式の本文
+      expect(text_body).to match('以下のタスクを作成しました')
+      expect(text_body).to match('メイラーSpecを書く')
+      expect(text_body).to match('送信したメールの内容を確認します') 
+
+      # html形式の本文
+      expect(html_body).to match('以下のタスクを作成しました')
+      expect(html_body).to match('メイラーSpecを書く')
+      expect(html_body).to match('送信したメールの内容を確認します')    
+    end
+  end
+end
+```
+
+結果は下記のとおりとなった。
+
+```
+$ bundle exec rspec spec/mailers/task_mailer_spec.rb
+
+Finished in 0.55547 s
+
+econds (files took 3.2 seconds to load)
+1 example, 0 failures
+```
+
+<BR><BR>
+
+### Chapter07-5 「ファイルをアップロードしてモデルに添付する」  
+
+---
+
+タスクに画像ファイルを添付する。  
+Rails5.2からActiveStorageが同梱され、クラウドストレージサービスへファイルをアップロードし、  
+データベース上でActiveRecordモデルに紐づけることが簡単にできるようになった。 
+
+Active Storageを使うためには、以下を実行し、マイグレーションファイルを作成する。  
+
+```
+bin/rails active_storage:install
+```
+
+すると、マイグレーションファイルには、以下の２つのテーブルを作成する内容が記述されている。  
+- ActiveStorage::Blob
+- ActiveStorage::Attachment
+
+Blobは、画像データに対応するモデルであり、ファイル名・コンテンツタイプ、サイズなどを管理する。    
+Attachmentは、ActiveBlobをアプリ内の他のモデルと関連付けするための中間テーブルを管理する。  
+
+今回の場合、AttachmentはTaskモデルとBlobの間を取り持つことになる。  
+
+マイグレーションファイルを実行し、DBに反映させる。  
+
+```
+$ bin/rails db:migrate
+```
+
+また、ファイル自体の管理の設定についてだが、以下のとおりとなっている。  
+- config/environments/development.rb にて「Rails.application.config.active_storage.service」に  
+ファイルを管理する場所の名前を与える。development環境において、デフォルトだとlocalが保存場所となっている。
+- localがどこかという定義については、config/storage.ymlファイルにて記述されている。   
+
+<br>
+
+#### タスクモデルに画像を添付できるようにする
+---
+
+手順について確認する。  
+
+1. Taskモデルに紐付けを行う。
+2. new.html.slimにて画像アップロード用のフィールドを追記する。
+3. edit.html.slimにて画像アップロード用のフィールドを追記する。
+4. confirm_new.html.slimにて画像が表示されるようにする。
+5. confirm_edit.html.slimにて画像が表示されるようにする。
+6. show.html.slimにて画像が表示されるようにする。
+
+<br>
+
+#### Taskモデルに紐付けを行う
+---
+
+これだけらしい。  
+
+```rb
+# models/task.rb
+
+  has_one_attached :image
+
+```
+
+なお、複数のイメージを紐付けたい場合、has_many_attachedとするらしい。  
+[【Rails 5\.2】 Active Storageの使い方 \- Qiita](https://qiita.com/hmmrjn/items/7cc5e5348755c517458a)  
+
+<br>
+
+#### newとeditのhtml.slimにて画像アップロード用のフィールドを追記する  
+---
+
+いずれのコードにも以下を追加する。
+new.html.slimの例を記す。
+
+```rb
+# new.html.slim
+
+h1 タスクの新規登録
+
+= render partial: 'error', locals: { task: @task }
+
+= form_with model: @task, local: true, url: {controller: 'tasks', action: 'confirm_new' } do |f|
+  .form-group
+    = f.label :name
+    = f.text_field :name, class: 'form-control', id: 'task_name'
+  .form-group
+    = f.label :description
+    = f.text_area :description, rows: 5, class: 'form-control', id: 'task_description'
+    # 以下の２行を追加
+    = f.label :image
+    = f.file_field :image, class: 'form-control'
+  = f.submit '確認', class: 'btn btn-primary'
+
+```
+
+edit.html.slimについても、同一のコードを追加すること。
+なお、tasks_controller.rb に strong params に :image を追加すること。
+
+
+<br>
+
+#### confirm_new, confirm_edit, showのhtml.slim画面にて、画像が表示されるようにする  
+---
+
+どちらもパーシャルである_confirm.html.slimをrenderしてきている。  
+よって、_confirm.html.slimファイルを修正する。  
+
+```
+# _confirm.html.slim
+# 該当部分のみ記載
+
+tr
+  th= Task.human_attribute_name(:image)
+  td= image_tag @task.image if @task.image.attached?
+```
+
+また、show.html.slimについても同様の対応を行う。  
+
+<br>
+
+#### 実装後の画面
+---
+
+以下のとおり、show.html.slimを開くと表示される。  
+また、確認画面においても表示されるようになった。  
+
+<a href="https://gyazo.com/99d00ff3535be68c566f3242dc267e2d"><img src="https://i.gyazo.com/99d00ff3535be68c566f3242dc267e2d.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<BR><BR>
+
+### Chapter07-6 「CSV形式のファイルのインポート／エクスポート」  
+
+---
+
+シンプルなCSV出力機能とCSV入力機能を実装する。  
+実装には、Rubyのcsvライブラリを使用する。  
+
+config/application.rbに以下のコードを加える。
+
+```rb
+require 'csv'
+```
+<br>
+
+#### タスクをCSV出力する
+---
+
+models/task.rb ファイルに csv_attribute というクラスメソッドを追加する。  
+また、generate_csv というクラスメソッドを追加する。  
+
+これにより、モデルからcsvを出力できる。
+
+```rb
+# models/task.rb
+
+# CSVデータにどの属性をどの順番で出力するかを定義
+def self.csv_attributes
+  ["name", "description", "created_at", "updated_at"]
+end
+
+def self.generate_csv
+  # CSVデータの文字列を生成し、csv_attributesクラスメソッドの戻り値を出力する
+  CSV.generate(headers: true) do |csv|
+    # CSVの１行目としてヘッダを出力する。
+    # csv_attributesクラスの属性値である"name"や"description"などを出力。
+    csv << csv_attributes
+    all.each do |task|
+      csv << csv_attributes.map{|attr| task.send(attr)}
+    end
+  end
+end
+```
+
+次に、generate_csvクラスメソッドを呼び戻すコントローラの実装を行う。  
+tasks_controller.rbに以下のコードを加える。  
+
+ここでは、CSV形式でファイルを実際に出力するコードを記載する。  
+
+```rb
+# tasks_controller.rb
+# indexアクションのみ抜粋
+
+def index
+    @q = current_user.tasks.ransack(params[:q])
+    @tasks = @q.result(distinct: true)
+
+    # respond_to を使うと、求めている形式にてファイルを出力することができる。  
+    # 今回はcsv形式だが、json形式などで返すこともできる。  
+    respond_to do |format|
+      format.html
+      format.csv {send_data @tasks.generate_csv, filename: "tasks-#{Time.zone.now.strftime('%Y%m%d%S')}.csv"}
+    end
+  end
+end
+```
+
+最後にcsvファイルをダウンロードできるボタンを実装する。  
+
+```
+# index.html.slim
+# 末尾にこのコードを追加する
+
+= link_to 'エクスポート', tasks_path(format: :csv), class: 'btn btn-primary mb-3'
+```
+
+<br>
+
+#### 実装後
+---
+
+無事、以下のようなcsvファイルが出力できるようになった。  
+
+<a href="https://gyazo.com/ea854176cf32d6de6b72848c2ea7794d"><img src="https://i.gyazo.com/ea854176cf32d6de6b72848c2ea7794d.png" alt="Image from Gyazo" width="600" border=1/></a>

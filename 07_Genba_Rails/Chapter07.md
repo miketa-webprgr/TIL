@@ -645,7 +645,7 @@ end
 ---
 
 テンプレートのパスは、特に指定しない場合、メイラーのクラス名とメソッド名から推測される。  
-今回は、cration_email.email.拡張子となる。  
+今回は、cration_email.拡張子となる。  
 
 受信者の環境に配慮して、HTML形式及びテキスト形式のメール、両方を用意する。  
 
@@ -1024,3 +1024,232 @@ end
 無事、以下のようなcsvファイルが出力できるようになった。  
 
 <a href="https://gyazo.com/ea854176cf32d6de6b72848c2ea7794d"><img src="https://i.gyazo.com/ea854176cf32d6de6b72848c2ea7794d.png" alt="Image from Gyazo" width="600" border=1/></a>
+
+<br>
+
+#### タスクをCSV形式でインポートする
+---
+
+多少流れが複雑になるため、メモする。  
+これを５番から１番という順番で行っていく。  
+（１番→５番と考える方がイメージしやすいが、実装するとなると５番から始める方がやりやすいため）
+
+1. index.html.slimにインポートボタンを実装
+2. インポートボタンを押すと、importアクションに飛ぶ
+3. importアクションに飛ぶよう、ルーティング設定を行う
+4. importアクションを実装。Taskモデルのimportメソッドを使って、csv形式のタスク群をDBに登録する。  
+5. Taskのimportメソッドを実装する。
+
+<br>
+
+#### Taskのimportメソッドを実装する
+---
+
+インポートメソッドを実装する。
+CSVファイルをTaskクラスのattributesに合わせて取り込み、DBに保存する。  
+
+```rb
+# models/task.rb
+# importメソッドのみ記載
+
+  # csvをインポートするメソッド
+  def self.import(file)
+    # CSV ファイルを１行ずつ読み込む（headers: trueにより、１行目をヘッダとして無視する）
+    CSV.foreach(file.path, headers: true) do |row|
+      # クラスメソッドのためnewのみとなっているが、インスタンスメソッドの場合はTask.newとなる
+      task = new
+      # sliceというメソッドを使って、指定した安全なキーに対応するデータだけを取り出して入力に用いる
+      # *csv_attributesは、csv_attributesメソッドの戻り値の配列内の要素をそれぞれ引数に指定する書き方
+      task.attributes = row.to_hash.slice(*csv_attributes)
+      task.save!
+    end
+  end
+```
+
+<br>
+
+#### importアクションを実装（コントローラへの追記）
+---
+
+続いて、コントローラに追記する。  
+Taskモデルのimportアクションを使用して、index.html.slimにリダイレクトするようにする。  
+
+```rb
+# tasks_controller.rb
+# importアクションのみ記載
+
+  def import
+    current_user.tasks.import(params[:file])
+    redirect_to tasks_url, notice: "タスクを追加しました"
+  end
+
+```
+<br>
+
+#### importアクションに飛ぶよう、ルーティング設定を行う
+---
+
+importアクションが実行されるよう、ルーティング設定を行う。  
+resourcesの処理群の一つに加えたいので、collectionを使う。  
+
+なお、memberは:idがつく場合、collectionは:idがつかない場合。  
+[railsのroutes\.rbのmemberとcollectionの違いをわかりやすく解説してみた。〜rails初心者から中級者へ〜 \- Qiita](https://qiita.com/hirokihello/items/fa82863ab10a3052d2ff)  
+
+```rb
+# routes.rb
+# 該当部分のみ記載
+
+  resources :tasks do 
+    post :import, on: :collection
+    〜 省略 〜
+  end
+```
+
+結果、以下のとおりルーティングが設定された。  
+
+```
+import_tasks POST   /tasks/import(.:format)   tasks#import
+```
+
+<br>
+
+#### 1. index.html.slimにインポートボタンを実装（クリック→importアクションへ）
+---
+
+index.html.slimの末尾に以下のコードを追加する。  
+
+```
+# index.html.slim
+
+# gemなどを使わ図に画像や写真をアップロードする場合、このmultipart: trueが必要
+= form_tag import_tasks_path, multipart: true, class: 'mb-3' do
+  = file_field_tag :file
+  = submit_tag "インポート", class: 'btn btn-primary'
+```
+
+なお、以下のcsvファイルを取り込んでみる。  
+
+```csv
+name, description, created_at, updated_at
+餃子を作る, 160個作る
+餃子を冷凍する, 160個は食べきれないので冷凍する
+
+# name => 餃子を作る, description => 160個作る
+# created_atとupdated_at => nilなので取り込まれた日時を登録
+```
+
+無事、実装された。  
+
+【インポートボタン】  
+<a href="https://gyazo.com/1848baa9ffcb10f4d2d6c14bea53e0f5"><img src="https://i.gyazo.com/1848baa9ffcb10f4d2d6c14bea53e0f5.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+【インポート後】  
+<a href="https://gyazo.com/e508da6924ac9dcd32d5d561abac091e"><img src="https://i.gyazo.com/e508da6924ac9dcd32d5d561abac091e.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+
+<BR><BR>
+
+### Chapter07-7 「ページネーション」  
+
+---
+
+ページネーションとは、レコード件数が一定数を超えた場合に複数のページに分割して表示を行うようにすること。  
+ページネーションを行うには、よくkaminariというgemが使われる。  
+
+kaminariをGemfileに加えて、bundleする。  
+
+<br>
+
+#### ページ番号に対応する範囲のデータを検索するようにする
+---
+
+タスク一覧画面のindexアクションを変更する。  
+
+```rb
+# tasks_controller.rb
+
+  def index
+    @q = current_user.tasks.ransack(params[:q])
+    # .page(params[:page])を追加した
+    @tasks = @q.result(distinct: true).page(params[:page])
+```
+
+非常にシンプル。  
+
+kaminariは、デフォルトだと1ページあたりにレコード件数を25件表示する設定となっている。
+1番目~25番目のタスクを1ページ目とし、25~50番目のタスクを2ページ目・・・としてくれる。  
+該当のページを開くと、そのページのparamsが格納され、indexアクションに引き渡してくれる。  
+
+それが.page(params[:page])で実現する。  
+すごい。。。  
+
+<br>
+
+#### ビューにページネーションのための情報を表示
+---
+
+これだけで良いらしい。  
+
+```
+# index.html.slim
+# 該当部分のみ表示
+
+.mb-3
+  # 現在どのページにいるか表示し、他のページに移動するためのリンクも表示
+  = paginate @tasks
+  # 全データが何件なのか表示
+  = page_entries_info @tasks
+```
+
+なお、日本語化する場合、kaminari.ja.ymlファイルを作成・追加する必要がある。  
+面倒なので、万葉さんが公開しているファイルをそのまま使うことにする。。。  
+
+<br>
+
+#### デザインの調整
+---
+
+paginateヘルパーが利用するパーシャルテンプレートをアプリケーション内に用意し、  
+それを自分でカスタマイズすることで、好きなデザインに調整することができる。  
+
+パーシャルテンプレートはkaminariの提供するジェネレータで生成するが、  
+フレームワークに合わせたテンプレートが既に用意されているため、該当のテーマを選択するとよい。  
+
+[Github: amatsuda/kaminari\_themes](https://github.com/amatsuda/kaminari_themes)  
+
+Githubで案内のとおり、以下のコマンドを入力してみる。  
+全てのテーマを確認することができる。  
+
+```
+rails g kaminari:views
+```
+
+bootstrap4 を使っているため、bootstrap4 のパーシャルテンプレートを導入する。  
+
+無事、実装が終了。  
+恐ろしく簡単だった。  
+
+<a href="https://gyazo.com/dba2b49aa2c7eeaf6cb961c745df3b57"><img src="https://i.gyazo.com/dba2b49aa2c7eeaf6cb961c745df3b57.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<br>
+
+#### 表示件数を変更したいとき
+---
+
+1. perスコープで指定
+2. per_pageを使って、モデルごとのデフォルトの表示件数を指定
+3. kaminariの設定ファイルを使って全体的なデフォルト表示件数を指定
+
+１の場合、pageメソッドにチョロっと追加するだけで済む。
+
+```
+# 10件ごとの表示に切り替えたい場合、最後に.per(10)とするだけ
+
+@tasks = @q.result(distinct: true).page(params[:page]).per(10)
+```
+
+２の場合、モデルで「paginates_per 10」と追記する。  
+このやり方は、当該モデル内のメソッド全てに適用される。  
+
+３の場合、コマンドから「g kaminari:config」をして、生成ファイル内の該当箇所を変更するだけ。  
+

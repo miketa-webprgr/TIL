@@ -1253,3 +1253,174 @@ bootstrap4 を使っているため、bootstrap4 のパーシャルテンプレ�
 
 ３の場合、コマンドから「g kaminari:config」をして、生成ファイル内の該当箇所を変更するだけ。  
 
+<BR><BR>
+
+### Chapter07-8 「非同期処理や定期実行を行う」  
+
+---
+
+<dl>
+  <dt>非同期処理</dt>
+  <dd>重い処理を非同期処理として切り出し、アクションでは処理の受付だけを行うことで快適に操作できるようにすること</dd>
+  <dt>定期実行</dt>
+  <dd>「朝の９時に毎日実行」というように、日時をしてして処理すること</dd>
+</dl>
+
+なお、以上を行うために、Active Job というフレームワークを活用する。
+
+<br>
+
+#### 非同期処理ツールの導入
+---
+
+Active Jobは、非同期処理を行うツールではなく、共通のインターフェース（I/F）で扱うための仕組み。 
+よって、非同期処理を行うため、Sidekiqを使う。（他、ResqueやDelayedJobなどがある）  
+
+Sidekitdeは、キーバリュー型のデータベースRedisを利用する。  
+・・・キーバリュー型。  
+
+[NoSQL キーバリュー型のまとめ \- よしたく blog](https://yoshitaku-jp.hatenablog.com/entry/2018/05/18/742/)  
+
+どうやら、SQLで扱うようなRDBSではなく、関係性についてのデータを保存しないらしい。  
+キーとバリューだけを扱うらしい。  
+近年、サーバーが簡単に分割できることから、注目を集めているらしい。  
+
+ともかく、Redisをbrewコマンドでインストールし、redis-serverを立ち上げる。  
+
+また、gem 'sidekiq' を Gemfileに追加し、bundle exec sidekiq にて実行する。  
+
+連携のため、redisとsidekiqを連携させるため、以下を行う。  
+
+```rb
+# config/environments/development.rb
+
+# 以下のコードの下に追加
+# config.file_watcher = ActiveSupport::EventedFileUpdateChecker
+
+config.active_job.queue_adapter = :sidekiq
+```
+
+<br>
+
+#### ジョブの作成、実行
+---
+
+実際にジョブを作成していく。  
+ここではあくまで動作確認を行うため、実質的には仕事をしない、簡単なジョブを作成する。  
+
+```
+# 以下のコマンドにてひな形を作成
+# app/jobs/sample_job.rbが生成される
+
+$ bin/rails g job sample
+```
+
+なお、処理が実行されていることを容易に把握するため、performメソッドに以下を記載する。  
+
+```rb
+# app/jobs/sample_job.rb
+
+def perform(*args)
+  Sidekiq::Logging.logger.info "サンプルジョブを実行しました"
+end
+```
+
+このジョブを呼び出すため、以下のようにコードを追記する。  
+
+```rb
+# tasks_controller.rb
+# createアクションの「if @task.save」部分のみ表示する
+
+〜 省略 〜
+
+if @task.save
+  TaskMailer.creation_email(@task).deliver_now
+  # 以下に１行コードを追加
+  # sample_job.rbを非同期にて、後ほど実行する
+  # ここでは実行の予約が行われ、処理できる状態になっった時点で実行開始する
+  SampleJob.perform_later
+  redirect_to @task, notice: "タスク「#{@task.name}」を登録しました。"
+
+〜 省略 〜
+
+```
+
+これで、タスクを保存した際、先ほどsample_job.rbに記載したジョブが実行される。  
+・・・全然実行されない。。。  
+
+30−40分、格闘する。  
+とりあえず、Sidekiqにはダッシュボードを実装できる機能があり、  
+Queueの処理状況がダッシュボードから確認できるようなので、ダッシュボードの実装を始める。  
+
+どうやら、ルーティングに以下を設定し、gem 'sidekiq/web' を導入すればよいことが分かる。  
+公式Githubにて確認。  
+
+```rb
+# routes.rb に記載
+
+require 'sidekiq/web'
+mount Sidekiq::Web => '/sidekiq'
+```
+
+これで '/sidekiq' にてダッシュボードにアクセスできるはず。  
+
+<a href="https://gyazo.com/881d6c39c781206048129379a2ff1248"><img src="https://i.gyazo.com/881d6c39c781206048129379a2ff1248.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<br>
+
+<a href="https://gyazo.com/f33aac7098c346ab40d407a5a3b29a53"><img src="https://i.gyazo.com/f33aac7098c346ab40d407a5a3b29a53.png" alt="Image from Gyazo" width="600" border=1/></a>
+
+ダッシュボード、アクセス成功！  
+
+・・・失敗してる。  
+エラー名が確認できたので、これで検索をかけてみる。  
+
+[Ruby on Rails 5 \- NameError: uninitialized constant Sidekiq::Loggingの解決方法｜teratail](https://teratail.com/questions/235628)  
+
+> こちら、自分も全く同じエラーが出ました。  
+> どうやらsidekiqのバージョンが新しすぎるのが原因みたいです。  
+
+> Gemfileにバージョンを指定して  
+> gem 'sidekiq', '~> 5.0'  
+> bundle install  
+> sidekiqを再起動でいけました。  
+
+なるほど！  
+即チャレンジ！！  
+
+<a href="https://gyazo.com/09d915f80ccb9b61bef73afece655bb3"><img src="https://i.gyazo.com/09d915f80ccb9b61bef73afece655bb3.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+成功した！！  手間かけさせやがって。。。  
+gem 導入時は、バージョンの互換性を疑うのが大事！  
+
+<br>
+
+#### 実行日時指定
+---
+
+なお、ジョブは日時を指定することができる。  
+setメソッドを使って、翌日の正午にジョブを実行することができる。  
+
+```rb
+SampleJob.set(wait_until: Date.tomorrow.noon).perform_later
+```
+
+詳細は、Sidekiqのwikiに記載されているらしい。  
+
+<br>
+
+#### Active Job って何に使うの？
+---
+
+そもそも論が現場railsに記載されていないため、調べた。  
+
+Railsガイドには、以下のとおり解説されていた。  
+[1 はじめに](https://railsguides.jp/active_job_basics.html#%E3%81%AF%E3%81%98%E3%82%81%E3%81%AB)  
+
+> Active Jobは、ジョブを宣言し、それによってバックエンドでさまざまな方法による  
+> キュー操作を実行するためのフレームワークです。ジョブには、定期的なクリーンアップを  
+> 始めとして、請求書発行やメール配信など、あらゆる処理がジョブになります。  
+
+たしかに、メールの自動配信は有効な使い道の一つかもしれない。  
+しかも、これでWebサイトの動作が遅れても困るので、非同期とすべきよい事例だろう。  
+

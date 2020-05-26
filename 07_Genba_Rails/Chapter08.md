@@ -39,9 +39,9 @@ Ajaxは、以下のメリットがある。
 - 非同期であるため、処理待ちのストレスをページ遷移に比べて感じづらい
 
 
-<BR><BR>
+<br>
 
-### Chapter08-3 「Ajaxでタスクを削除する」  
+#### Ajaxでタスクを削除する」  
 ---
 
 タスク削除は、これまでタスクのデータを削除するという処理だけでなく、  
@@ -149,4 +149,78 @@ SJRとは、Server-generated Javascript Responsesの略であり、
 ajax通信の度に該当のJSを送ってあげる方式である。  
 
 まず、DOM要素を指定できるように、HTML上のidで識別できるような形で  
-ndex.html.slimのコードを書き直す。  
+index.html.slimのコードを書き直す。  
+
+```
+# index.html.slim
+# tr の後に「id="t-#{t.id}"」を追加する
+# 現場railsに背いて、あえて|t|としたので色々とバグが起きるが、無事解明できた
+
+〜　省略　〜
+
+tbody
+  - @tasks.each do |t|
+    tr id="t-#{t.id}"
+
+〜　省略　〜
+
+```
+
+続いて、「remote: true」にてajax通信がサーバーに飛んだ後に返すJSのファイルを作成する。  
+
+```js
+# views/tasks/destroy.js.erb
+# なお、SJRであるメリットを生かして、適切なメッセージを表示させる機能を追加した
+
+document.querySelector("#t-<%= @task.id %>").style.display = 'none';
+
+var message = document.createElement('p');
+message.innerText = 'タスク「<%= @task.name %>」を削除しました。残りのタスクは<%= current_user.tasks.count %>件です。';
+document.querySelector('table').insertAdjacentElement('beforebegin', message);
+```
+
+なお、assets/javascripts/tasks.js は不要なので、コードをコメントアウトする。  
+また、tasks_controller.rbのdestroyアクションに書いてある、head: no_content は削除する。  
+
+以下のとおり、実装できた。  
+JSのエラーはスルーされてしまうので、上手く動作しないと原因解明が大変だった。  
+
+Railsの開発環境だと、どこでエラーが起きたのが示してくれるので、  
+あんなにも憎かったエラー画面のありがたさがやっと分かった。親みたいな存在だ。  
+
+<a href="https://gyazo.com/920d5afa87128bfd51069a511fdbb754"><img src="https://i.gyazo.com/920d5afa87128bfd51069a511fdbb754.gif" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<BR><BR>
+
+### Chapter08-3 「Turbolinks」  
+---
+
+Railsが提供するJS機能として、ページ遷移を高速化する Turbolinks がある。  
+
+遷移先のページを Ajax で取得し、取得したページが要求するJSやCSSが現在のものと同一であれば、  
+titleやbody要素のみを置き換える。リクエストごとにJSやCSSをブラウザが評価しないため、  
+パフォーマンスが向上させることができる、とのこと。  
+
+また、ブラウザの戻るボタンなどの履歴操作や、その際のキャッシュ復元にも対応している。  
+
+なお、Turbolinks は、Rails new した時点でオンになっており、導入作業は不要。  
+
+<br>
+
+#### Turbolinksの注意点
+---
+
+Turbolinksは、ページ遷移や戻る、進むと言ったブラウザの動作をフックとして動作する。  
+そこで、Tubolinksは、自身の処理状態に応じてイベントを発行する機能を備えている。  
+
+また、Turbolinksを活用することで、本来はページの遷移が想定されているところで、  
+Turbolinksの機能により上手くイベントが発火しないことがあるので、注意すること。  
+
+その他、`<script>`のコードはhead内に書かないと、高速化の恩恵が得づらいことに留意すること。  
+
+Turbolinksにはデメリットがあるので、必要に応じて無効化すること。  
+- rails new の際に -- skip-turbolinks オプションをつけることで解除できる
+- rails new 後に無効化する場合、gem を削除し、JSのマニフェストファイルから該当箇所を削除する。  
+
+
+

@@ -222,5 +222,170 @@ Turbolinksにはデメリットがあるので、必要に応じて無効化す�
 - rails new の際に -- skip-turbolinks オプションをつけることで解除できる
 - rails new 後に無効化する場合、gem を削除し、JSのマニフェストファイルから該当箇所を削除する。  
 
+<BR><BR>
+
+### Chapter08-4 「モダンなJavaScript管理を行う」  
+---
+
+JSのコード量が増えるにつれて、ファイル間の依存関係が煩雑になり、あるコードの変更が他のコードに影響を与える  
+などの問題が生じてしまう。また、ES2015以降の仕様でJSを書いた時に、実行できるブラウザに制限が生じてしまう。  
+
+これらの問題を解決するために、RailsではYarnというパッケージマネージャーとWebpackerというライブラリを提供している。  
+
+・・・なるほど？
+
+<br>
+
+#### Yarn
+---
+
+Yarn  
+- Facebookが開発
+- JSのパッケージマネージャー
+  - パッケージとは、ライブラリの公開単位であり、コードなどのファイルをひとまとめにしたもの
+  - 要は、jQueryやReactなどのバージョン管理等を行うbundler的なものがJSにもある、ということらしい
+
+以下の記事を読んで、学習。  
+[JavaScriptのパッケージマネージャーnpmとYarnについて解説します！ \| 侍エンジニア塾ブログ（Samurai Blog） \- プログラミング入門者向けサイト](https://www.sejuku.net/blog/96866)  
+
+RailsでYarnを使えるようにするには、Yarnのサイトの案内に従ってインストールする必要がある。  
+・・・それ以上の説明は現場railsにないので、調べてみる。  
+
+公式サイトをみると、homebrew がインストールされている場合、以下をコマンド入力するよう指示があった。  
+環境による部分もあるのだろうが、サクッと終わった。  
+
+```
+brew install yarn
+```
+
+Yarnでパッケージを追加する場合、以下を入力する。  
+
+```
+$ bin/yarn add Reactなどのパッケージ
+```
+
+以上のコマンドを入力することで、指定されたパッケージをインストールできるだけでなく、  
+指定されたパッケージをpackage.jsonに追加することができる。  
+
+これは、勘違いしていなければ、RailsでいうところのGemfileのような機能を果たす。  
+package.jsonを開発者の間で共有することで、簡単に同じJSライブラリ環境を作ることができるとのこと。  
+
+例えば、開発に新しく参加する場合、package.jsonファイルを共有してもらい、  
+以下のコマンドを入力することで、簡単に同じパッケージを導入することができる。  
+
+```
+$ bin/yarn add パッケージ名
+```
+
+基本的な使い方については、こちらのブログで説明がされている。  
+[Yarn の使い方。インストールの方法から使い方まで解説します。 \| オリジナルゲーム\.com](https://original-game.com/yarn-how-to-use/#m_heading-0)  
+
+あと、あまり今回は調べなかったが、そもそもNode.jsについてまだピンときていないところがあるので、
+JSの勉強をする際に意識していきたい。（サーバーサイドでJSを使うということは分かるけど、具体的なイメージが沸かない）  
+
+<br>
+
+#### Webpacker
+---
 
 
+Webpackerは、JSのビルドツール「Webpack」のラッパーである。  
+・・・日本語でお願いします。  
+
+困り果ててGoogleで検索していたら、以下の記事を発見。  
+[webpack学習の基本のき \|](https://www.fundely.co.jp/blog/tech/2020/01/22/180037/)  
+
+- WebpackerとWebpackは、別物である。
+- Webpackとは、JavaScriptモジュールバンドラー
+  - モジュール =  コンパイルした（いい感じに読み込みやすくする）JS・CSS・画像ファイルなどのアセットファイル
+  - バンドラー =  直訳すると束。アセットファイルを束にする機能。
+  - 既に取り扱ったSprocketsと同じようなアセットパイプラインのツールらしい
+
+なお、Webpackの導入により、以下のような問題が解決できるらしい。  
+・特定のブラウザでES6構文が使えない
+・ファイルの取得時間が増える
+・規模が大きくなると管理が辛くなる
+
+また、Webpackerとは、Railsのgemであり、Webpackを簡単に扱うためのツールである。  
+
+Rails 6系では、SprocketsからWebpackerに完全移行しているようであり、重要度は極めて高そう。  
+[Rails 6の変更点と新機能 \| RE:ENGINES](https://re-engines.com/2019/08/26/rails-6%E3%81%AE%E5%A4%89%E6%9B%B4%E7%82%B9/)  
+
+WebpackerはGemfileであるため、おなじみのGemfileに記載 → bundle install にて導入できる。  
+なお、新規アプリの場合、rails new アプリ名 --webpack にて対応できるとのこと。  
+
+インストール後、以下のコマンドにより、Webpackerで必要な設定ファイル・ディレクトリの生成、  
+必要なJSパッケージインストールが行われる。  
+
+```
+$ bin/rails webpacker:install
+```
+
+なお、Sprocketsにおけるマニフェストファイルは、エントリポイントと呼ばれる。  
+エントリポイント（applicaion.js)は、app/javascripts/packs内に保存される。  
+
+このpacks内に保存したファイルが、コンパイルされるらしい。  
+
+<br>
+
+#### Webpackerでのコンパイル
+---
+
+開発環境においては、自動でコンパイルが行われる。  
+本番環境のためのコンパイルは、webpacker::compileというRakeタスクで行う。  
+
+Sprocketsとの共存も出来るもよう。  
+[Ruby on Rails で sprockets から Webpacker へ移行し、移行できないものは共存させる方法 \- Qiita](https://qiita.com/tatsurou313/items/645cbf0a3af4c673b5df)  
+
+<BR><BR>
+
+### Chapter08-5 「taskleafにReactを導入してみる」  
+---
+
+ここで、Facebook社が開発しているReactというJSのUIライブラリを導入してみる。  
+ReactではReactDOMというものも必要になるので、Reactと併せてインストールする。  
+
+Yarnを使ってインストールする。  
+
+```
+$ bin/yarn add react react-dom
+```
+
+続いて、 app/javascript/taskleaf ディレクトリに hello.js を作成する。  
+コードは下記のとおり。  
+
+```js
+// app/javascript/taskleaf/hello.js
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+
+document.addEventListener('DOMContentLoaded', () => {
+  ReactDOM.render(
+    React.createElement('div', null, 'Hello World!'),
+    document.body.appendChild(document.createElement('div')),
+  );
+});
+```
+
+続いて、エントリポイントのapplicaition.jsに以下を記載する。
+
+```js
+// app/javascript/packs/application.js
+// hello.jsをコンパイルするための設定だと思われる
+
+import 'taskleaf/hello';
+```
+
+そして、application.html.slimにて、javacript_include_tagを書き換える。
+
+```slim
+# head内の = javacript_include_tagの部分を以下のコードで上書きする
+
+= javascript_pack_tag 'application'
+```
+
+下記のとおり、Reactにて Hello World! と表示できた。  
+びっくりするぐらい地味で、実装できたことに気付くの時間がかかった。  
+
+<a href="https://gyazo.com/ab083132189374993b16931e3956bed3"><img src="https://i.gyazo.com/ab083132189374993b16931e3956bed3.png" alt="Image from Gyazo" width="452" border=1/></a>  

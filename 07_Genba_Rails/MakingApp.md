@@ -125,4 +125,81 @@ Cacooだと、操作性の問題なのか時間がかかってしまう。
 29. 余裕がなさそうだけど、できればUser関係まで頑張る
 30. その場合、Profileモデルを追加し、associationする
 
+なお、ビュー関係に手厚く書いて、コントローラ関係やモデル関係の処理に関する部分はかなり大雑把になったが、  
+とりあえずこれで進めていくこととしよう。  
 
+<BR><BR>
+
+### GithubでIssueを作ってみる
+---
+
+先ほどの記事に従って、愚直にIssueを作ってみた。
+また、このノートをベースにして、README.mdを更新してみた。
+
+<a href="https://gyazo.com/2284a6b8c056df0335df22f9a16e4482"><img src="https://i.gyazo.com/2284a6b8c056df0335df22f9a16e4482.png" alt="Image from Gyazo" width="700" border=1/></a>
+
+また、Githubのプロジェクトも使ってみた。  
+計画を立てることが目的となっている感がひどいので、さすがに作業を始めることにする。  
+
+さて、git pull して作業に移行する。
+
+### 環境構築
+---
+
+現場railsで学習をしていた際には Rails 5.2.1 を使っていたが、今回はRailsの6.0.3バージョンを利用することとする。  
+また、Rubyのバージョンについては、2.6.6にする。（2.7系の方が新しいが、gemとのトラブルが多そうな気がした。根拠はないけど）  
+
+<a href="https://gyazo.com/5daf78b1862d643348d06ec69989125d"><img src="https://i.gyazo.com/5daf78b1862d643348d06ec69989125d.png" alt="Image from Gyazo" width="800"/></a>  
+
+できました！  
+
+さて、使うであろうgemを取り込んでいく。  
+あまり吟味せず、現場railsで使ったgemの中からとりあえず必要そうなものを放り込む。  
+
+```
+Gemfile
+
+# 検索機能等を追加するransack
+gem 'ransack'
+# URLをオートリンク化するgemを追加
+gem 'rails_autolink'
+# パスワードをdigest（ハッシュ値）として保存する
+gem 'bcrypt', '~> 3.1.7' 
+# Slimジェネレータ
+gem 'slim-rails'
+# Erb形式をSlim形式に変換するerb2slimコマンドを提供
+gem 'html2slim'
+# Bootstrapを読み込む
+gem 'bootstrap'
+# エラーメッセージを日本語化する
+gem 'rails-i18n', '~> 5.1' 
+# パスワードをdigest（ハッシュ値）として保存する
+gem 'bcrypt', '~> 3.1.7'
+# RSpecに関係するgem
+gem 'rspec-rails','~> 3.7'
+gem 'factory_bot_rails','~> 4.11'
+```
+
+・・・あ、ブランチを切るのを忘れていた。  
+
+本当は先にブランチを切らなければならなかったのだが、改めて'#1'というブランチを作成。  
+git add からの commit を決め（メッセージに #1 を必ず含めること）、git push していく。  
+
+・・・作業自体はほとんどしていないけど。  
+
+<a href="https://gyazo.com/302c8b474c642f8e013e59d4b2685ac6"><img src="https://i.gyazo.com/302c8b474c642f8e013e59d4b2685ac6.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+さて、ここから一人二役の時間。  
+下っ端のプログラマーとしてプルリクを上司に出して、次に上司としてプルリクの内容を精査する。  
+問題がなければ上司としてプルリクを受け入れてマージする。  
+
+そしてマージされたあと、コミットメッセージに #1 を入れたことにより、うまく issue に結びついている。  
+結果が以下のとおり。  
+
+<a href="https://gyazo.com/282d1f26a1b5fe8f2bb70c613406586b"><img src="https://i.gyazo.com/282d1f26a1b5fe8f2bb70c613406586b.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+issue を閉じて、ブランチを削除する。  
+
+そして、誰かが作業しているかもしれないという想定で、一応 git pull する。  
+
+また、branch '#2' を作成し、次の作業に移行する。  

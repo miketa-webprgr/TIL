@@ -62,7 +62,7 @@
 CacooというWebアプリケーションを使うことにした。  
 作った図は以下のとおり。  
 
-<iframe src="https://cacoo.com/diagrams/MIS8VpBACc4MNzLs/view?si=90A3B&w=700&h=525" width="702" height="555" frameborder="1" scrolling="no"></iframe>  
+<a href="https://gyazo.com/7bb2ec501682728e8b11255730a8ec13"><img src="https://i.gyazo.com/7bb2ec501682728e8b11255730a8ec13.png" alt="Image from Gyazo" width="700" border=1/></a> 
 
 <br>
 
@@ -143,6 +143,8 @@ Cacooだと、操作性の問題なのか時間がかかってしまう。
 
 さて、git pull して作業に移行する。
 
+<br>
+
 ### 環境構築
 ---
 
@@ -203,3 +205,340 @@ issue を閉じて、ブランチを削除する。
 そして、誰かが作業しているかもしれないという想定で、一応 git pull する。  
 
 また、branch '#2' を作成し、次の作業に移行する。  
+
+<br>
+
+### 要件定義関係の修正
+----
+
+画面遷移図等をメンターさんに確認を依頼したところ、誤り等についても指摘されたが、  
+そもそも実装機能が多過ぎるので、時間内に終わるような作業量であるとは到底思えないとの話があった。  
+
+・・・そんな気はしてました（笑）  
+ということで、吟味した結果、以下のように修正。  
+
+<a href="https://cacoo.com/diagrams/MIS8VpBACc4MNzLs/0D12F"><img src="https://cacoo.com/diagrams/MIS8VpBACc4MNzLs-0D12F-w800-h600.png" border=1/></a>  
+
+<br>
+
+<a href="https://gyazo.com/488d48d0f8a34b1047c3084160e9a03d"><img src="https://i.gyazo.com/488d48d0f8a34b1047c3084160e9a03d.png" alt="Image from Gyazo" width="800" border=1/></a> 
+
+<br>
+
+なお、issue管理の際に活用するタスクリストについても修正した。  
+
+1. Rails new + 環境構築(主にgem関係)
+2. ルーティングの設定
+3. Billsモデルの作成
+4. Billsに共通のnavバーを作成
+5. Billsのindexビューを作成する
+6. Billsのshowビューを作成する
+7. Billsのeditビューを作成する
+8. Billsのnewビューを作成する
+9. パーシャル化する（show・edit・new）
+10. Billsのコントローラに処理を記述する + 各ビューをform_withでつなげる
+11. RSpecにテストを書く（create, update, destroyが機能するか）
+12. Usersモデルの追加
+13. bcryptを使用する（パスワードのダイジェスト）
+14. Admin/billsのindexビューを作成する
+15. Adminに共通のnavバーを作る
+16. Admin/billsのshowビューを作成する
+17. Admin/billsのeditビューを作成する
+18. Admin/billsのnewビューを作成する
+19. パーシャル化する（show・edit・new）
+20. Adminのコントローラに処理を記述する + 各ビューをform_withでつなげる
+21. RSpecにテストを書く（create, update, destroy, change が機能するか）
+22. RSpecにテストを書く（Billsのビューにて、Admin が create, update, changeしたものが反映されるか）
+23. ログインのビューを作る
+24. ログイン・ログアウトの機能を作る
+25. RSpecにテストを書く（ログイン・ログアウト機能）
+26. 今後の課題として、Userの登録・編集・削除機能を追加する
+
+<br>
+
+### railtiesのトラブル
+---
+
+さて、コントローラの作成手続きに入る。
+
+```
+rails g controller bills 
+```
+
+```
+/Users/XXXXX/.rbenv/gems/2.6.0/gems/bundler-2.1.4/lib/bundler/resolver.rb:290:in `block in verify_gemfile_dependencies_are_found!':  
+Could not find gem 'ransack' in any of the gem sources listed in your Gemfile. (Bundler::GemNotFound)  
+```
+
+いきなり、環境構築系のトラブル。  
+確認すると、なぜかGemfileにはransackが書いてあるのに、Gemfile.lockにはransackがない。  
+
+ハイハイ、もう一度 bundle install すればいいんでしょ。  
+
+```
+Bundler could not find compatible versions for gem "railties":
+  In snapshot (Gemfile.lock):
+    railties (= 6.0.3.1)
+
+  In Gemfile:
+    rails (~> 6.0.3, >= 6.0.3.1) was resolved to 6.0.3.1, which depends on
+      railties (= 6.0.3.1)
+
+    rails-i18n (~> 5.1) was resolved to 5.1.3, which depends on
+      railties (< 6, >= 5.0)
+
+Running `bundle update` will rebuild your snapshot from scratch, using only
+the gems in your Gemfile, which may resolve the conflict.
+```
+
+ご、ごめんなさい。訳分からないです。  
+
+・・・ググったりして、格闘中・・・
+
+ん、bundleと相性が良いrailtiesがないと言っているのだから、bundlerが古いのでは！？  
+じゃあ、bundlerをアップデートしてみよう。
+
+
+・・・bundler、最新バージョンだった。。。  
+
+え、じゃあrails-i18n関係なのか。  
+これは新しいバージョンが出ているようなので、Gemfileを書き換えて対応してみる。  
+
+```
+# 修正前
+gem 'rails-i18n', '~> 5.1' # For 5.0.x, 5.1.x and 5.2.x
+# 修正後
+gem 'rails-i18n', '~> 6.0.0' # For 6.0.0 or higher
+```
+
+解決した！  
+railtiesなんとか、とか惑わすようなことを言われたので時間がかかってしまった。  
+
+<br>
+
+### ルーティングの設定
+---
+
+改めて、コントローラの作成手続きに入る。
+
+```
+rails g controller bills 
+```
+
+続いて、resourcesを使って、ルーティングの設定を行う。  
+目指す形は以下のとおり。  
+
+<a href="https://gyazo.com/d6b72599156f2220cb7e109ef5085de1"><img src="https://i.gyazo.com/d6b72599156f2220cb7e109ef5085de1.png" alt="Image from Gyazo" width="600" border=1/></a> 
+
+多少苦戦するも、無事画面のとおり設定完了。  
+
+```rb
+Rails.application.routes.draw do
+  root to: 'bills#index'
+
+  resources :bills
+
+  namespace :admin do
+    resources :bills do
+      member do
+        post :done
+        post :undone
+      end
+    end
+  end
+
+  get '/login', to: 'sessions#new'
+  post '/login', to: 'sessions#create'
+  delete '/logout', to: 'sessions#destroy'
+
+end
+```
+
+```
+             Prefix      Verb        URI Pattern                            Controller#Action
+  -----------------      ------      ---------------------------------      -------------------
+               root      GET         /                                      bills#index
+              bills      GET         /bills(.:format)                       bills#index
+                         POST        /bills(.:format)                       bills#create
+           new_bill      GET         /bills/new(.:format)                   bills#new
+          edit_bill      GET         /bills/:id/edit(.:format)              bills#edit
+               bill      GET         /bills/:id(.:format)                   bills#show
+                         PATCH       /bills/:id(.:format)                   bills#update
+                         PUT         /bills/:id(.:format)                   bills#update
+                         DELETE      /bills/:id(.:format)                   bills#destroy
+    done_admin_bill      POST        /admin/bills/:id/done(.:format)        admin/bills#done
+  undone_admin_bill      POST        /admin/bills/:id/undone(.:format)      admin/bills#undone
+        admin_bills      GET         /admin/bills(.:format)                 admin/bills#index
+                         POST        /admin/bills(.:format)                 admin/bills#create
+     new_admin_bill      GET         /admin/bills/new(.:format)             admin/bills#new
+    edit_admin_bill      GET         /admin/bills/:id/edit(.:format)        admin/bills#edit
+         admin_bill      GET         /admin/bills/:id(.:format)             admin/bills#show
+                         PATCH       /admin/bills/:id(.:format)             admin/bills#update
+                         PUT         /admin/bills/:id(.:format)             admin/bills#update
+                         DELETE      /admin/bills/:id(.:format)             admin/bills#destroy
+              login      GET         /login(.:format)                       sessions#new
+                         POST        /login(.:format)                       sessions#create
+             logout      DELETE      /logout(.:format)                      sessions#destroy
+```
+
+### 2回目のプルリク
+---
+
+さて、commitも綺麗に整えて、プルリクを送る。  
+一人でやっているのに、無駄に「恐れ入りますが」といったメッセージを入れてみる。  
+
+<a href="https://gyazo.com/05cf3b881e1caec6eec42699ea5ede2d"><img src="https://i.gyazo.com/05cf3b881e1caec6eec42699ea5ede2d.png" alt="Image from Gyazo" width="600" border=1/></a>
+
+説明が必要なコードにコメントを無駄に入れてみた。  
+
+<a href="https://gyazo.com/972e0649bd3450eca3f4d7109cfa95c0"><img src="https://i.gyazo.com/972e0649bd3450eca3f4d7109cfa95c0.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+さて、マージして、ブランチ削除 + issueクローズを行う。  
+そして、新しくブランチ #3 を作成して、作業を再開する。  
+
+こうやっていると、1人なのにチームで開発している感がして、ぼっちでも楽しい！  
+かもね。。。  
+
+<br>
+
+### ルーティングの再設定
+---
+
+ルーティングを設定し終えて、流派はあるが、基本的にはresourcesにmemberやcollectionを使うのは望ましくないとの話を受けた。  
+その際、以下の記事を紹介された。  
+
+[DHH流のルーティングで得られるメリットと、取り入れる上でのポイント \- KitchHike Tech Blog](https://tech.kitchhike.com/entry/2017/03/07/190739)  
+
+先ほどのルーティングは、doneとundoneというアクションを追加してしまったので、  
+これをDHH流のルーティング設定に置き換えてみる。  
+
+<a href="https://gyazo.com/9bb0f1197f5d252c0d6ce5f2400fff61"><img src="https://i.gyazo.com/9bb0f1197f5d252c0d6ce5f2400fff61.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+```rb
+Rails.application.routes.draw do
+  root to: 'bills#index'
+
+  resources :bills
+
+  namespace :admin do
+    resources :bills do
+      resource :completion, only: [:update, :destroy], module: "bills"
+    end
+  end
+
+  resources :sessions, only: [:new, :create, :destroy]
+end
+```
+
+```
+               Prefix      Verb        URI Pattern                                     Controller#Action
+---------------------      ------      ---------------------------------               -------------------
+                 root      GET         /                                               bills#index
+                bills      GET         /bills(.:format)                                bills#index
+                           POST        /bills(.:format)                                bills#create
+             new_bill      GET         /bills/new(.:format)                            bills#new
+            edit_bill      GET         /bills/:id/edit(.:format)                       bills#edit
+                 bill      GET         /bills/:id(.:format)                            bills#show
+                           PATCH       /bills/:id(.:format)                            bills#update
+                           PUT         /bills/:id(.:format)                            bills#update
+                           DELETE      /bills/:id(.:format)                            bills#destroy
+admin_bill_completion      PATCH       /admin/bills/:bill_id/completion(.:format)      admin/bills/completions#update
+                           PUT         /admin/bills/:bill_id/completion(.:format)      admin/bills/completions#update
+                           DELETE      /admin/bills/:bill_id/completion(.:format)      admin/bills/completions#destroy
+          admin_bills      GET         /admin/bills(.:format)                          admin/bills#index
+                           POST        /admin/bills(.:format)                          admin/bills#create
+       new_admin_bill      GET         /admin/bills/new(.:format)                      admin/bills#new
+      edit_admin_bill      GET         /admin/bills/:id/edit(.:format)                 admin/bills#edit
+           admin_bill      GET         /admin/bills/:id(.:format)                      admin/bills#show
+                           PATCH       /admin/bills/:id(.:format)                      admin/bills#update
+                           PUT         /admin/bills/:id(.:format)                      admin/bills#update
+                           DELETE      /admin/bills/:id(.:format)                      admin/bills#destroy
+             sessions      POST        /sessions(.:format)                             sessions#create
+          new_session      GET         /sessions/new(.:format)                         sessions#new
+              session      DELETE      /sessions/:id(.:format)                         sessions#destroy
+```
+
+<br>
+
+### Billモデルの作成
+---
+
+以下のような形でモデルを作成する。  
+
+<a href="https://gyazo.com/488d48d0f8a34b1047c3084160e9a03d"><img src="https://i.gyazo.com/488d48d0f8a34b1047c3084160e9a03d.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+```
+bin/rails g model Bill status:boolean name:string date:date item:string description:text price:integer
+```
+
+マイグレーションファイルにNOTNULL制約や一意制約を加え、マイグレートする。  
+マイグレーションファイルは、下記のとおりである。  
+
+```rb
+class CreateBills < ActiveRecord::Migration[6.0]
+  def change
+    create_table :bills do |t|
+      t.boolean :status, default: false
+      t.string :name, null: false, unique: true
+      t.date :date, null:false
+      t.string :item, null: false
+      t.text :description
+      t.integer :price, null: false
+
+      t.timestamps
+    end
+  end
+end
+```
+
+ここで疑問を抱く。  
+Modelでvalidationの制約をかけるのと、migrationで制約をかけるのに何の違いあるのか。  
+また、テーブルへの制約のかけ方には、どのようなものがあるのか。  
+
+[Ruby on Rails \- railsでアプリを作っています。DBのnull:falseとモデルでのvalidatesでのpresence trueの違いを教えてください｜teratail](https://teratail.com/questions/59911)  
+[【Rails】「テーブルのカラムに定義するNot Null制約」と「モデルに定義するバリデーション（presence: true）」の挙動の違い。 \- Qiita](https://qiita.com/wonder_meet/items/fa804f0d436a29c97460)  
+[Rails　テーブルの制約について \- Qiita](https://qiita.com/oteko7/items/2b03fa13d2f1c91e67e2)  
+
+勉強になった。  
+テーブルで制約をかけるのは保険のようなものであって、きちんとrailsのモデルの方でもvalidationをかける必要があるらしい。  
+
+<br>
+
+### validationの設定
+---
+
+続けて、バリデーションを設定する。  
+
+```
+t.boolean :status   →  値が存在すること
+t.string :name      →  値が存在すること、値が一意であること、値に空白が存在しないこと（コールバックにて、保存する際に空白等を取り除く形とする）
+t.date :date        →  値が存在すること
+t.string :item      →  値が存在すること
+t.text :description →  NULLを許容する
+t.integer :price    →  値が１以上の整数であること
+```
+
+以上のような考え方に基づき、バリデーションを書く。  
+以下の記事を参考にした。  
+
+[Active Record バリデーション \- Railsガイド](https://railsguides.jp/active_record_validations.html#valid-questionmark%E3%81%A8invalid-questionmark)  
+[Railsバリデーションまとめ \- Qiita](https://qiita.com/h1kita/items/772b81a1cc066e67930e)  
+
+```rb
+# Bill.rb
+# コールバックにて、nameを保存する際に空白等を取り除く処理は、後ほど追加する）
+
+class Bill < ApplicationRecord
+  validates :status, inclusion: {in: [true, false]}
+  validates :name, presence: true, uniqueness: true
+  validates :date, presence: true
+  validates :item, presence: true
+  validates :price, numericality: { greater_than: 0 }
+end
+```
+
+ここまで終わったので、Githubにpushしておく。
+
+
+
+

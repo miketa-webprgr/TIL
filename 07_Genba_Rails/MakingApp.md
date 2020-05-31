@@ -143,6 +143,11 @@ Cacooだと、操作性の問題なのか時間がかかってしまう。
 
 さて、git pull して作業に移行する。
 
+<br><br>
+
+## Issue 1.0 - Rails new + 環境構築 
+---
+
 <br>
 
 ### 環境構築
@@ -205,6 +210,11 @@ issue を閉じて、ブランチを削除する。
 そして、誰かが作業しているかもしれないという想定で、一応 git pull する。  
 
 また、branch '#2' を作成し、次の作業に移行する。  
+
+<br><br>
+
+## Issue 2.0 - ルーティングの設定  
+---
 
 <br>
 
@@ -458,6 +468,11 @@ admin_bill_completion      PATCH       /admin/bills/:bill_id/completion(.:format
               session      DELETE      /sessions/:id(.:format)                         sessions#destroy
 ```
 
+<br><br>
+
+## Issue 3.1 Billモデルの作成 
+---
+
 <br>
 
 ### Billモデルの作成
@@ -539,6 +554,476 @@ end
 
 ここまで終わったので、Githubにpushしておく。
 
+<br><br>
+
+## Issue 3.2 Billsに共通のnavバーを作成
+---
+
+ナビゲーションバーを作成する。 
+
+これは、showやeditなどでも共通して使用するものにはなるので、application.html.slim にコードを加える。  
+ただし、admin/bills のビューを作成する場合には、application.html.slimからコードを移動させる必要がある。  
+
+現場Railsで使ってきたコードを使って、応用する形で対応する。  
+
+```slim
+body
+  / navbar-dark.bg-darkとした
+  .app-title.navbar.navbar-expand-md.navbar-dark.bg-dark
+    .navbar-brand 部費管理マネジャー
+    ul.navbar-nav.ml-auto
+      li.nav-item= link_to '申請一覧', root_path, class: 'nav-link'
+      li.nav-item= link_to '申請する', new_bill_path, class: 'nav-link'
+      li.nav-item= link_to '管理者ログイン', new_session_path, class: 'nav-link'
+```
+
+なお、bootstrapに関係する部分について、以下のサイトで確認をした。  
+今回は、少しだけアレンジを加えて、黒色を基調とした。  
+
+[Navbar \- Bootstrap 4\.2 \- 日本語リファレンス](https://getbootstrap.jp/docs/4.2/components/navbar/)  
+[【Bootstrap】Navbarの使い方・カスタマイズ方法を徹底解説 \| 侍エンジニア塾ブログ（Samurai Blog） \- プログラミング入門者向けサイト](https://www.sejuku.net/blog/75948)  
+
+[Tables \- Bootstrap 4\.2 \- 日本語リファレンス](https://getbootstrap.jp/docs/4.2/content/tables/)  
+[Bootstrapでテーブルを利用する方法 \- Qiita](https://qiita.com/AquaMeria/items/b94d1d9ba074f04336b9)  
+
+少し試したが、体系的に勉強をしないと仕組みを理解できない気がした。
+だが、今回はbootstrap周りを理解することは目標ではないため、勉強はそれなりにして次の作業に移行する。  
+
+なお、リンク先のページをまだ作成していないため、クリックするとエラーとなってしまう。  
+
+<br><br>
+
+## Issue 3.3 Billsのindexビューを完成させる
+---
+
+次に、ページの本体部分（container)部分を作成する。  
+ここは、オリジナルで作成しなければならない。  
+
+無駄にマージンやパディングを調整して時間がかかってしまったが、以下のような形で落ち着いた。  
+
+```slim
+
+h1.mt-5.mb-5 申請一覧
+
+h4.pt-5.pb-3 請求中
+
+table.table.table-hover
+  thead.thead-default
+    tr
+      th= Bill.human_attribute_name(:date)
+      th= Bill.human_attribute_name(:name)
+      th= Bill.human_attribute_name(:item)
+      th= Bill.human_attribute_name(:price)
+    tbody
+      - @bills.each do |bill|
+        tr
+          td= bill.date
+          td= bill.name
+          td= bill.item
+          td= bill.price
+
+h4.pt-5.pb-3 精算済
+
+table.table.table-hover
+  thead.thead-default
+    tr
+      th= Bill.human_attribute_name(:date)
+      th= Bill.human_attribute_name(:name)
+      th= Bill.human_attribute_name(:item)
+      th= Bill.human_attribute_name(:price)
+    tbody
+      - @bills.each do |bill|
+        tr
+          td= bill.date
+          td= bill.name
+          td= bill.item
+          td= bill.price
+```
+
+なお、マージンではなくてパディングを使った箇所、もしくはその逆などがあるかもしれない。  
+
+マージンやパディングの意味は分かるけど、実践の中でどう使い分けたらよいか、いまいち分かっていない。  
+
+また、このままだと寂しいし、ページの見栄えが確認しづらい。  
+そこで、rails consoleを使って、データを格納してみた。  
+
+本来はおかしいのだが、ロジックを書くのが面倒なので、上の表にも下の表にも同じデータが表示されるようにした。  
+
+```rb
+# bills_controller.rb
+
+class BillsController < ApplicationController
+
+  def index
+    @bills = Bill.all
+  end
+
+  〜 他のアクションについても中身が空の状態で作成した 〜
+
+end
+```
+
+その結果、以下のとおりとなった。  
+
+<a href="https://gyazo.com/cf57dde74d39274bfe6fe328e1f3c53a"><img src="https://i.gyazo.com/cf57dde74d39274bfe6fe328e1f3c53a.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<br><br>
+
+## Issue 3.4 Billsのshowビューを完成させる
+---
+
+indexの基本的な内容をそのまま使いつつ、下段部分の精算日や説明に関するテーブルを追加する。  
+indexとshow、その他の今後作るnewやeditの画面も、比較できるよう併せて掲載する。  
+
+<a href="https://gyazo.com/77296b35890fccb1569b129ba12b27e0"><img src="https://i.gyazo.com/77296b35890fccb1569b129ba12b27e0.png" alt="Image from Gyazo" width="226"/></a>  
+
+<a href="https://gyazo.com/afc0b6d728b586f2816ab6946ddbb72e"><img src="https://i.gyazo.com/afc0b6d728b586f2816ab6946ddbb72e.png" alt="Image from Gyazo" width="449"/></a>  
+
+
+なお、画像を添付できるようにするには、Active Storage の機能を使う必要があり、  
+多少の手間がかかるので、とりあえずその部分は作らないこととする。  
+
+<br>
+
+### 精算日カラムの漏れ
+---
+
+ここで、カラムの漏れに気付く。  
+精算日カラムがない。  
+
+よって、下記のとおりマイグレーションファイルを作成し、修正する。  
+なお、立替日を示すdateのカラム名は紛らわしいので、カラム名を変更する。  
+
+まず、カラムを追加するマイグレーションファイルを作成する。  
+なお、精算日カラム名は、completed_onとする。
+
+```
+$ bin/rails generate migration AddColumnToBills completed_on:date
+```
+
+以下のとおり、マイグレーションファイルが生成される。  
+生成された後、マイグレートする。  
+
+```rb
+class AddColumnToBills < ActiveRecord::Migration[6.0]
+  def change
+    add_column :bills, :completed_on, :date
+  end
+end
+```
+
+続いて、立替日カラム名をdateからpaid_onに変更する。  
+
+```
+$ bin/rails generate migration rename_date_column_to_bills
+```
+
+以下のとおり、マイグレーションファイルが生成される。  
+生成された後、マイグレートする。  
+
+```rb
+class RenameDateColumnToBills < ActiveRecord::Migration[6.0]
+  def change
+    rename_column :bills, :date, :paid_on
+  end
+end
+```
+
+なお、作業にあたっては、以下を参考にした。  
+
+[マイグレーションファイルの命名規則 \- Qiita](https://qiita.com/yasumasaabe/items/825e960bbac216424329)  
+[Ruby on Rails カラムの追加と削除 \- Qiita](https://qiita.com/azusanakano/items/a2847e4e582b9a627e3a)  
+[Rails カラム名変更方法 \- Qiita](https://qiita.com/libertyu/items/93acd8733e34b1d0a63c)  
+
+<br>
+
+### リンクを貼る
+---
+
+追加した項目名（先ほどの画像でいうところの「サッカーボール」）をクリックすると、  
+その申請データの詳細が確認できるようにする。  
+
+index.html.slimについて、下記のとおり修正する。  
+なお、カラム名の変更があったので、該当箇所の修正も併せて行うこと。  
+
+```slim
+h1.mt-5.mb-5 申請一覧
+
+h4.pt-5.pb-3 請求中
+
+table.table.table-hover
+  thead.thead-default
+    tr
+      / dateからpaid_onに修正する
+      th= Bill.human_attribute_name(:paid_on)
+      th= Bill.human_attribute_name(:name)
+      th= Bill.human_attribute_name(:item)
+      th= Bill.human_attribute_name(:price)
+    tbody
+      - @bills.each do |bill|
+        tr
+          / dateからpaid_onに修正する
+          td= bill.paid_on
+          / ヘルパーメソッドにより、billと記載することでshowアクションを呼び出してくれる
+          td= link_to bill.name, bill
+          td= bill.item
+          td= bill.price
+
+/ 以下の表についても同様に修正する
+
+```
+
+<br>
+
+### show.html.slimを作る
+---
+
+リンクを貼れたが、リンク先ビューファイルがない状態である。  
+ここで、show.html.slimを作成し、コードを書き込んでいく。  
+
+なお、パーシャル化できる部分があるので、そこは_basictable.html.slimにまとめていく。 
+まとめる内容は、以下のとおりとする。  
+
+```slim
+table.table.table-hover
+  thead.thead-default
+    tr
+      th= Bill.human_attribute_name(:paid_on)
+      th= Bill.human_attribute_name(:name)
+      th= Bill.human_attribute_name(:item)
+      th= Bill.human_attribute_name(:price)
+    tbody
+      - @bills.each do |bill|
+        tr
+          td= bill.paid_on
+          td= link_to bill.name, bill
+          td= bill.item
+          td= bill.price
+```
+
+なお、以下のとおり、index.html.slim や、show.html.slim に記載する。  
+これで、_basictable.html.slimを参照し、該当コードを持ってくることができる。
+
+```slim
+= render partial: 'basictable', locals: {bill: @bill}
+```
+
+show.html.slim のコードは、index.html.slim を参考にしつつ、以下のとおりとした。  
+
+```slim
+/ いずれコントローラもしくはモデルでの処理にて、status(:boolean)の値を参照して、
+/ falseであれば「申請中」、trueであれば「精算済」と表示するよう設定する
+/ 差し当たり、「申請中」という表示で固定しておく
+
+h1.mt-5.mb-5 申請中
+
+= render partial: 'basictable', locals: {bill: @bill}
+
+table.table.table-hover.mt-5.mb-5
+  tbody
+    tr
+      th= Bill.human_attribute_name(:completed_on)
+      td= @bill.completed_on
+    tr
+      th= Bill.human_attribute_name(:description)
+      td= @bill.description
+
+= link_to '編集', edit_bill_path(@bill), class: 'btn btn-primary mr-3'
+= link_to '削除', bill_path(@bill), method: :delete, class: 'btn btn-danger'
+```
+
+また、bills_controller.rbの設定が必要になる。  
+以下のとおり、showアクションを定義した。  
+
+```rb
+# bills_controller.rb
+# showアクションのみ記載
+
+  def show
+    @bills = Bill.all
+    @bill = Bill.find(params[:id])
+  end
+```
+
+結果、以下のとおり画面を作ることができた。  
+
+<a href="https://gyazo.com/f7bc33bf291bb103c230f0cdd5f0941b"><img src="https://i.gyazo.com/f7bc33bf291bb103c230f0cdd5f0941b.png" alt="Image from Gyazo" width="700" border=1/></a>  
+
+<br><br>
+
+## Issue 3.5 Billsのeditビューを完成させる
+---
+
+さて、ここではレイアウトはshowと同一であっても、入力可能な状態にする必要がある。  
+edit.html.slimのコードは、今までのものとは大きく異なってくる。  
+
+Bootstrapの勉強はしたくなかったが、とはいえ、個人的にここでbootstrapのレイアウトを適用しないというのは、  
+納得がいかなかったので、以下の記事などを参照しながら作業を進めた。  
+
+まとめて書くとエラーの原因が分からないので、ちょっとずつコードを書き加えてはブラウザで確認するという作業を繰り返した。  
+おかげで、無事作り上げることができた。ここはそれなりに満足である。  
+
+とりあえず、form-groupで囲って、クラスをform-controlにするとイイ感じにまとめてくれることまで理解した。  
+その他、細かい設定については、追々の課題ということにして、次に行く。  
+
+[【Rails】form\_forの使い方をマスターしよう！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/form_for#f.date_select)  
+[Bootstrapでフォームを利用する方法 \- Qiita](https://qiita.com/AquaMeria/items/fe3fd9ebeb4c7171da3b)  
+[Forms \- Bootstrap 4\.1 日本語リファレンス](https://getbootstrap.jp/docs/4.1/components/forms/#form-groups)  
+
+また、form_withの使い方についてだが、何度もお世話になっているこの記事をまた確認した。  
+
+[【Rails】form\_with/form\_forについて【入門】 \- Qiita](https://qiita.com/snskOgata/items/44d32a06045e6a52d11c)  
+
+```slim
+/ edit.html.slim
+
+/ いずれコントローラもしくはモデルでの処理にて、status(:boolean)の値を参照して、
+/ falseであれば「申請中」、trueであれば「精算済」と表示するよう設定する
+/ 差し当たり、「申請中」という表示で固定しておく
+
+h1.mt-5.mb-5 申請中
+
+= form_with model: @bill, local: true do |f|
+  table.table.table-hover
+    thead.thead-default
+      tr
+        th= Bill.human_attribute_name(:paid_on)
+        th= Bill.human_attribute_name(:name)
+        th= Bill.human_attribute_name(:item)
+        th= Bill.human_attribute_name(:price)
+    tbody
+      tr
+        td
+          .form-group
+            = f.datetime_field :paid_on, class: 'form-control'
+        td
+          .form-group
+            = f.text_field :name, class: 'form-control'
+        td
+          .form-group
+            = f.text_field :item, class: 'form-control' 
+        td
+          .form-group
+            = f.number_field :price, class: 'form-control' 
+  
+  = f.submit nil, class: 'btn btn-primary mr-3'
+```
+
+あと、忘れずにコントローラにeditアクションを追加する。  
+
+```rb
+# bills_controller.rb
+# editアクションの部分のみ記載
+
+def edit
+  @bill = Bill.find(params[:id])
+end
+```
+
+以下が作成画面である。  
+
+<a href="https://gyazo.com/56a4e11731ef928846c47d2850eb171a"><img src="https://i.gyazo.com/56a4e11731ef928846c47d2850eb171a.png" alt="Image from Gyazo" width="800" border=1/></a>  
 
 
 
+余談であるが、画面ばっかり作っているので、正直Railsやっている感じがあまりしない。  
+まあ、自分で決めたタスクの進め方がそうなっているので、仕方がないのだけれど。  
+（通常であれば、ここでupdate機能の実装あたりをやるのだろうけど、なぜかnew作りにいきます笑）  
+
+あと、気が付いた！  
+全く脈絡ないが、indexとshowでそもそもパーシャル化しているのがおかしい。  
+
+今のままだとデータが一つだけなので問題が生じていないが、複数のデータが記録されると、  
+showのビューが明らかにおかしいことになる。Githubのissueに追加し、機会を見つけて修正しよう。
+
+<br><br>
+
+## Issue 3.6 Billsのnewビューを完成させる
+---
+
+あー、ついにきた。  
+
+これは流石にedit作ったので、すぐ終わる案件だ。  
+これこそ、パーシャル化できる案件のはず。  
+
+form_with は、modelの中身を判断して、空だったら createアクションに飛ばしてくれる。  
+空でなければupdateアクションに飛ばしてくれる。
+
+だから、edit.html.slim の大半がパーシャル化できる！  
+
+パーシャル化する部分は、以下のとおり、_form.html.slimに寄せた。
+
+```slim
+/ _form.html.slim
+
+= form_with model: @bill, local: true do |f|
+  table.table.table-hover
+    thead.thead-default
+      tr
+        th= Bill.human_attribute_name(:paid_on)
+        th= Bill.human_attribute_name(:name)
+        th= Bill.human_attribute_name(:item)
+        th= Bill.human_attribute_name(:price)
+    tbody
+      tr
+        td
+          .form-group
+            = f.datetime_field :paid_on, class: 'form-control'
+        td
+          .form-group
+            = f.text_field :name, class: 'form-control'
+        td
+          .form-group
+            = f.text_field :item, class: 'form-control' 
+        td
+          .form-group
+            = f.number_field :price, class: 'form-control' 
+  
+  = f.submit nil, class: 'btn btn-primary mr-3'
+```
+
+そしたら、new.html.slimはこんなにシンプルに書けた。  
+これは快感！（夜中のテンションです）
+
+```slim
+/ new.html.slim
+
+h1.mt-5.mb-5 精算申請
+
+p.col-md-10.mb-5 以下のとおり部の費用を立て替えたので、返金をお願いします。
+
+= render partial: 'form', locals: {bill: @bill}
+```
+
+次に、edit.html.slimも書き換える。  
+
+```slim
+/ edit.html.slim
+
+/ いずれコントローラもしくはモデルでの処理にて、status(:boolean)の値を参照して、
+/ falseであれば「申請中」、trueであれば「精算済」と表示するよう設定する
+/ 差し当たり、「申請中」という表示で固定しておく
+
+h1.mt-5.mb-5 申請中
+
+= render partial: 'form', locals: {bill: @bill}
+```
+
+あと、忘れずにコントローラにnewアクションを追加する。  
+
+```rb
+# bills_controller.rb
+# newアクションの部分のみ記載
+
+  def new
+    @bill = Bill.new
+  end
+```
+
+以下が作成画面である。  
+サクッと終えることができたので、嬉しい！  
+
+<br><br>
+
+## Issue 3.7 Billsのnewビューを完成させる
+---

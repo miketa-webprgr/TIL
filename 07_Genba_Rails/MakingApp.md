@@ -1112,7 +1112,7 @@ table.table.table-hover.mt-5.mb-5
 = link_to '削除', bill_path(@bill), method: :delete, class: 'btn btn-danger'
 ```
 
-showアクションについても、無駄に bills = Bill.all という処理が行われていたので削除した。  
+showアクションについても、無駄に @bills = Bill.all という処理が行われていたので削除した。  
 
 <br>
 

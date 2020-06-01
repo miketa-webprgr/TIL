@@ -924,8 +924,6 @@ end
 
 <a href="https://gyazo.com/56a4e11731ef928846c47d2850eb171a"><img src="https://i.gyazo.com/56a4e11731ef928846c47d2850eb171a.png" alt="Image from Gyazo" width="800" border=1/></a>  
 
-
-
 余談であるが、画面ばっかり作っているので、正直Railsやっている感じがあまりしない。  
 まあ、自分で決めたタスクの進め方がそうなっているので、仕方がないのだけれど。  
 （通常であれば、ここでupdate機能の実装あたりをやるのだろうけど、なぜかnew作りにいきます笑）  
@@ -1023,7 +1021,529 @@ h1.mt-5.mb-5 申請中
 以下が作成画面である。  
 サクッと終えることができたので、嬉しい！  
 
+<a href="https://gyazo.com/9f8d39dc410cda038a03516a8327f4a1"><img src="https://i.gyazo.com/9f8d39dc410cda038a03516a8327f4a1.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<br>
+
+### パーシャル化の修正
+---
+
+なお、ここでパーシャル化がおかしい部分を修正する。  
+index, show, edit, new のコードを確認する。  
+
+すると、edit と new のみしかパーシャル化出来ず、index と show はパーシャル化すべきでないことが分かる。  
+（共通部分の分量が中途半端であるため、パーシャル化のメリットが少ないと判断した）
+
+よって、以下のようにコードを修正する。  
+
+```slim
+/ index.html.slim
+
+h1.mt-5.mb-5 申請一覧
+
+h4.pt-5.pb-3 請求中
+
+table.table.table-hover
+  thead.thead-default
+    tr
+      th= Bill.human_attribute_name(:paid_on)
+      th= Bill.human_attribute_name(:name)
+      th= Bill.human_attribute_name(:item)
+      th= Bill.human_attribute_name(:price)
+    tbody
+      - @bills.each do |bill|
+        tr
+          td= bill.paid_on
+          td= link_to bill.name, bill
+          td= bill.item
+          td= bill.price
+
+h4.pt-5.pb-3 精算済
+
+table.table.table-hover
+  thead.thead-default
+    tr
+      th= Bill.human_attribute_name(:completed_on)
+      th= Bill.human_attribute_name(:name)
+      th= Bill.human_attribute_name(:item)
+      th= Bill.human_attribute_name(:price)
+    tbody
+      - @bills.each do |bill|
+        tr
+          td= bill.completed_on
+          td= bill.name
+          td= bill.item
+          td= bill.price
+```
+
+```slim
+/ edit.html.slim
+
+/ いずれコントローラもしくはモデルでの処理にて、status(:boolean)の値を参照して、
+/ falseであれば「申請中」、trueであれば「精算済」と表示するよう設定する
+/ 差し当たり、「申請中」という表示で固定しておく
+
+h1.mt-5.mb-5 申請中
+
+table.table.table-hover
+  thead.thead-default
+    tr
+      th= Bill.human_attribute_name(:paid_on)
+      th= Bill.human_attribute_name(:name)
+      th= Bill.human_attribute_name(:item)
+      th= Bill.human_attribute_name(:price)
+  tbody
+    tr
+      td= @bill.paid_on
+      td= @bill.name
+      td= @bill.item
+      td= @bill.price
+
+table.table.table-hover.mt-5.mb-5
+  tbody
+    tr
+      th= Bill.human_attribute_name(:completed_on)
+      td= @bill.completed_on
+    tr
+      th= Bill.human_attribute_name(:description)
+      td= @bill.description
+
+= link_to '編集', edit_bill_path(@bill), class: 'btn btn-primary mr-3'
+= link_to '削除', bill_path(@bill), method: :delete, class: 'btn btn-danger'
+```
+
+showアクションについても、無駄に bills = Bill.all という処理が行われていたので削除した。  
+
+<br>
+
+### edit.html.slim と new の画面修正
+---
+
+作業していて気が付いた。  
+画面で表示すべき内容に不足がある。  
+
+詳細に関する記入欄がない。  
+また、edit画面については、精算日に関する記入欄がない。  
+
+なお、画像投稿等の欄については、後回しにする。  
+
+##### 目標
+
+<a href="https://gyazo.com/afc0b6d728b586f2816ab6946ddbb72e"><img src="https://i.gyazo.com/afc0b6d728b586f2816ab6946ddbb72e.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<br>
+
+##### 現実
+
+<a href="https://gyazo.com/9f8d39dc410cda038a03516a8327f4a1"><img src="https://i.gyazo.com/9f8d39dc410cda038a03516a8327f4a1.png" alt="Image from Gyazo" width="600" border=1/></a>
+
+<br>
+
+<a href="https://gyazo.com/56a4e11731ef928846c47d2850eb171a"><img src="https://i.gyazo.com/56a4e11731ef928846c47d2850eb171a.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+
+目標に合わせるため、コードを以下のとおり修正する。  
+
+newには「completed_on」の欄がないが、editにはあるのでパーシャル化ができないのではないかと考えていたが、  
+アドバイスをもらい、無事にパーシャル化することができた。  
+
+実施にあたっては、以下の記事を参考にした。  
+[new\_record?で場合分け ❏Rails❏ \- Qiita](https://qiita.com/ITmanbow/items/3f0be316fedec174d545)  
+
+```slim
+/ _form.html.slim
+/ unlessを使って、@billがある場合とない場合の分岐を作る
+
+= form_with model: @bill, local: true do |f| 
+  table.table.table-hover
+    thead.thead-default
+      tr
+        th= Bill.human_attribute_name(:paid_on)
+        th= Bill.human_attribute_name(:name)
+        th= Bill.human_attribute_name(:item)
+        th= Bill.human_attribute_name(:price)
+    tbody
+      tr
+        td
+          .form-group
+            = f.datetime_field :paid_on, class: 'form-control'
+        td
+          .form-group
+            = f.text_field :name, class: 'form-control'
+        td
+          .form-group
+            = f.text_field :item, class: 'form-control' 
+        td
+          .form-group
+            = f.number_field :price, class: 'form-control'
+
+  table.table.table-hover.mt-5.mb-5
+    tbody
+      tr
+        - unless @bill.new_record?
+          th= Bill.human_attribute_name(:completed_on)
+          td= @bill.completed_on
+      tr
+        th= Bill.human_attribute_name(:description)
+        td
+          .form-group
+            = f.text_area :description, class: 'form-control', size: "30x10"
+
+  = f.submit nil, class: 'btn btn-primary mr-3'
+```
+
+```slim
+/ edit.html.slim
+
+/ いずれコントローラもしくはモデルでの処理にて、status(:boolean)の値を参照して、
+/ falseであれば「申請中」、trueであれば「精算済」と表示するよう設定する
+/ 差し当たり、「申請中」という表示で固定しておく
+
+h1.mt-5.mb-5 申請中
+
+= render 'form', bill: @bill
+```
+
+```slim
+/ new.html.slim
+
+h1.mt-5.mb-5 精算申請
+
+p.col-md-10.mb-5 以下のとおり部の費用を立て替えたので、返金をお願いします。
+
+= render 'form', bill: @bill
+```
+
+画面は以下のとおりとなった。  
+
+<br>
+
+<a href="https://gyazo.com/0d329757757e0b9910e68da69324747b"><img src="https://i.gyazo.com/0d329757757e0b9910e68da69324747b.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<br>
+
+<a href="https://gyazo.com/637bea40ee564599e7441ed110a2856d"><img src="https://i.gyazo.com/637bea40ee564599e7441ed110a2856d.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
 <br><br>
 
-## Issue 3.7 Billsのnewビューを完成させる
+## Issue 3.7 日本語化
 ---
+
+ここで、面倒になっていた日本語化に着手する。  
+以下によると、ja.ymlファイルのダウンロードは不要らしい。  
+
+[\[初学者\]Railsのi18nによる日本語化対応 \- Qiita](https://qiita.com/shimadama/items/7e5c3d75c9a9f51abdd5#5-jayml%E3%81%AB%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%82%92%E8%A8%AD%E5%AE%9A%E3%81%99%E3%82%8B)  
+
+よって、まずデフォルトの設定を日本に合わせる。  
+config/application.rbに追記する。  
+
+```rb
+# config/application.rb
+
+require_relative 'boot'
+require 'rails/all'
+
+Bundler.require(*Rails.groups)
+
+module BuhiManager
+  class Application < Rails::Application
+    # Initialize configuration defaults for originally generated Rails version.
+    config.load_defaults 6.0
+
+    # Qiita記事を参考にして、日本語化する
+    # https://qiita.com/shimadama/items/7e5c3d75c9a9f51abdd5
+    config.time_zone = 'Tokyo'
+    config.active_record.default_timezone = :local
+    config.i18n.default_locale = :ja
+
+    # i18nの複数ロケールファイルが読み込まれるようpathを通す
+    config.i18n.load_path += Dir[Rails.root.join('config', 'locales', '**', '*.{rb,yml}').to_s]
+  end
+end
+```
+
+これだけで、デフォルトのロケールファイルを「svenfuchs/rails-i18n」は確かに反映された。  
+具体的には、Create Bill や Update Bill といったボタンが、「登録する」や「更新する」に変更されていることが確認できた。  
+
+続いて、ja.ymlファイルを作成し、モデルの属性などを日本語化する。  
+
+```yml
+# locales/ja.yml
+
+ja:
+  activerecord:
+    models:
+      bill: 申請 
+
+    # model毎に定義したいattributesを記述
+    attributes:
+      bill:
+        status: 未精算・精算済
+        name: 名前
+        paid_on: 立替日
+        item: 内容
+        description: 詳細 
+        price: 金額
+        completed_on: 精算日
+                
+  # 全てのmodelで共通して使用するattributesを定義
+  attributes:
+    created_at: 申請日時
+    updated_at: 更新日時
+```
+
+無事、反映された！  
+
+また、金額の表記方法があまり気に食わない（コンマがないなど）ので、以下の記事を参考に設定する。  
+[通貨のI18nは気をつけた方がいい \- Qiita](https://qiita.com/awakia/items/d29fdbf0cab0b27da48f)  
+
+関数を使えば一発で終わるらしい。  
+ということで、ざっと適用できるところには適用した。  
+
+```slim
+/ 以下は参考例
+/ index.html.slim や edit.html.slim などに適用
+
+td= number_to_currency bill.price
+```
+
+なお、フォームへの適用は難しそうなのでとりあえずスルーした。  
+画面は以下のとおりとなった。参考例として、index.html.slimを貼付する。  
+
+<br>
+
+<a href="https://gyazo.com/9713ab47a5d5980cb537ee2858ff2ded"><img src="https://i.gyazo.com/9713ab47a5d5980cb537ee2858ff2ded.png" alt="Image from Gyazo" width="600"/></a>
+
+<br><br>
+
+## Issue 3.8 Createアクションの実装
+---
+
+さて、コントローラ及びモデルに処理の実装を行っていく。  
+
+とはいっても、ビューと違って、コントローラに何を実装するか全く考えられていないので、  
+まず何の処理が必要か洗い出すところから始める。
+
+<br>
+
+<dl>
+<dt>indexアクション</dt>
+<dd>Billモデルから全てのデータを引っ張り出し、インスタンス変数に格納（そして表示）</dd>
+<dt>showアクション<dt>
+<dd>Billモデルから該当のidのデータを引っ張り出し、インスタンス変数に格納（そして詳細表示）</dd>
+<dt>editアクション</dt>
+<dd>Billモデルから該当のidのデータを引っ張り出し、インスタンス変数に格納（そして編集表示）</dd>
+<dt>newアクション</dt>
+<dd>Billモデルの新しいオブジェクトを作成し、インスタンス変数に格納</dd>
+<dt>createアクション</dt>
+<dd>Billモデルの新しいオブジェクト（引数はparamas）を保存</dd>  
+<dd>保存した後、index.html.slimに遷移し、フラッシュメッセージを表示</dd>  
+<dd>保存できない場合、現在のページから移動せず、エラーメッセージを表示</dd>  
+<dt>updateアクション</dt>
+<dd>Billモデルの該当のidのデータ（引数はparamas）を更新</dd>  
+<dd>更新した後、index.html.slimに遷移し、フラッシュメッセージを表示</dd>
+<dd>更新できない場合、エラーメッセージを表示</dd>
+<dt>destroyアクション</dt> 
+<dd>Billモデルの該当のidのデータを削除。フラッシュメッセージを表示。</dd>
+<dd>削除前に確認メッセージを表示</dd>
+</dl>
+
+<br>
+
+さて、index・show・edit・newアクションは作成済であるため、残り３アクションを実装していく。  
+まず、createアクションから実装する。  
+
+```rb
+# bills_controller.rb
+# createアクションのみ記載
+
+class BillsController < ApplicationController
+
+  def create
+    @bill = Bill.new(bill_params)
+
+    if @bill.save
+      redirect to @bill
+    else
+      render :new
+    end
+  end
+
+  # updateやdestroyアクションは省略
+
+  private
+
+  def bill_params
+    params.require(:bill).permit(:status, :name, :paid_on, :item, :description, :price, :completed_on)
+  end
+
+end
+```
+
+よし、現場railsの本からほぼパクってきているし、ミスのしようもないだろう！  
+とりあえず何のデータも入力せずに登録してみて、同じページがレンダーされるか確認する。  
+
+・・・
+
+<a href="https://gyazo.com/60fc52fadc1044b3aa126398e036e473"><img src="https://i.gyazo.com/60fc52fadc1044b3aa126398e036e473.png" alt="Image from Gyazo" width="600"/></a>  
+
+え、エラー！？  
+
+<br>
+
+### NoMethodError undefined method `date' の解決
+---
+
+けど、ここでRubyのインスタンスやらクラスの勉強が役に立つ。  
+
+NoMethodErrorということは、当然だがBillクラスのインスタンス変数である@billにメソッドがないということ。  
+そして、定義されていないdateメソッドがあるとのこと。  
+
+これが分かるだけでも、非常に精神衛生的に良い。  
+さて、伊藤大先生のエラーが起きた時のQiitaを見る。  
+
+[プログラミング初心者歓迎！「エラーが出ました。どうすればいいですか？」から卒業するための基本と極意（解説動画付き） \- Qiita](https://qiita.com/jnchito/items/056325421b7e36f02335)  
+
+なるほど。  
+
+伊藤先生、きちんとエラーメッセージは解読しました。エラーが起きている場所も特定しています。  
+@billをセーブしようとしている時に、dateメソッドがないということですよね！  
+
+ここで予測を立てる。  
+もしかして、値がnilだから問題が起きているのではないか。  
+
+以下にもそれらしきことが書いてある！  
+
+[Rubyのエラーメッセージundefined methodの解決方法【初心者向け】 \| TechAcademyマガジン](https://techacademy.jp/magazine/19776)  
+
+・・・rails console を使って、調べてみた！  
+どうやらdateメソッドはたしかにない！  
+
+ただし！！！  
+日付の値があっても、そのインスタンスにdateメソッドがない！！！  
+
+<br>
+
+### dateメソッドってあるの？
+---
+
+え、というかdateメソッドってそもそもあるのか。。。  
+
+Rubyのレファレンスマニュアルを確認してみる。  
+[オブジェクト指向スクリプト言語 Ruby リファレンスマニュアル \(Ruby 2\.7\.0 リファレンスマニュアル\)](https://docs.ruby-lang.org/ja/latest/doc/index.html)  
+
+うん、dateメソッドない。。。  
+じゃあ、どういうことだ。。。  
+
+なぜ、こっちが勝手にdateメソッドなんて作っていないにもかかわらず、undefined method `date' と出てくるんだ？？？  
+
+え、もしかして。。。  
+
+```rb
+# bill.rb
+# Billモデルのファイル
+
+class Bill < ApplicationRecord
+  validates :status, inclusion: {in: [true, false]}
+  validates :name, presence: true, uniqueness: true
+  # ここに犯人がいた！ dateって書いてある
+  validates :date, presence: true
+  validates :item, presence: true
+  validates :price, numericality: { greater_than: 0 }
+end
+```
+
+カラム名は修正したけど、バリデーションは修正し忘れていたというオチでした。  
+
+バリデーションがめちゃくちゃなので、以下のとおり書き換える。  
+
+```rb
+# bill.rb
+# Billモデルのファイル
+
+class Bill < ApplicationRecord
+  validates :status, inclusion: {in: [true, false]}
+  # nameカラムにuniquenessは不要。同一人物が１回しか申請できないのでは困る。
+  validates :name, presence: true
+  # dateカラムはもう削除したので、paid_onに変更する。
+  validates :paid_on, presence: true
+  validates :item, presence: true
+  validates :price, numericality: { greater_than: 0 }
+end
+```
+
+<br>
+
+### Flashメッセージを追加し、createアクションが機能するか確認する
+---
+
+さて、動作確認を行う。  
+ここで、createアクションの挙動が分かりやすいよう、以下のとおり設定する。  
+
+- コントローラにflashメッセージを格納させる設定を追加
+- redirect先のshow.html.slimにてフラッシュメッセージが表示されるコードを追加  
+
+```rb
+# bills_controller.rb
+# createアクションの該当部分のみ記載
+
+  def create
+    @bill = Bill.new(bill_params)
+
+    if @bill.save
+      redirect to @bill, notice: "#{@bill.item}（#{@bill.price}円）について、精算申請を提出しました。"
+    else
+      render :new
+    end
+  end
+
+  # updateやdestroyアクションは省略
+  # privateメソッドのbill_paramsアクションも省略
+end
+```
+
+```slim
+/ show.html.slim
+
+/ いずれコントローラもしくはモデルでの処理にて、status(:boolean)の値を参照して、
+/ falseであれば「申請中」、trueであれば「精算済」と表示するよう設定する
+/ 差し当たり、「申請中」という表示で固定しておく
+
+h1.mt-5.mb-5 申請中
+
+- if flash.notice.present?
+  .alert.alert-success.mt-5.mb-5= flash.notice
+
+  〜 以下、省略 〜
+```
+
+<br>
+
+new.html.slimの画面から登録すると、以下のとおり表示されるようになった。  
+めでたし、めでたし。  
+
+<a href="https://gyazo.com/31d2e0bbca2eec2905b695bd3db183f2"><img src="https://i.gyazo.com/31d2e0bbca2eec2905b695bd3db183f2.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+また、エラーメッセージが出るよう、以下のコードを_form.html.slimに追加した。  
+
+```slim
+/_form.html.slim
+/ 同ファイルの一番上に以下のコードを記載
+
+- if bill.errors.present?
+  ul#error_explanation
+    - bill.errors.full_messages.each do |message|
+      li= message
+
+〜 以下、省略 〜
+```
+
+すると、エラーメッセージが表示されるようになった。  
+
+<a href="https://gyazo.com/9629bf77549c0238e86fbb95dcd14ec1"><img src="https://i.gyazo.com/9629bf77549c0238e86fbb95dcd14ec1.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<br><br>
+
+## Issue 3.9 Updateアクションの実装
+---
+

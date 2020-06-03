@@ -1547,3 +1547,459 @@ new.html.slimの画面から登録すると、以下のとおり表示される�
 ## Issue 3.9 Updateアクションの実装
 ---
 
+続いて、updateアクションの実装を行う。  
+
+<dl>
+<dt>updateアクション</dt>
+<dd>Billモデルの該当のidのデータ（引数はparamas）を更新</dd>  
+<dd>更新した後、index.html.slimに遷移し、フラッシュメッセージを表示</dd>
+<dd>更新できない場合、エラーメッセージを表示</dd>  
+</dl>
+
+これは、ほぼコピペで良いのではないか。  
+コードを貼る場所にだけ、注意する。  
+
+```rb
+# bills_controller.rb
+# updateアクションのみ記載
+
+  def update
+    @bill = Bill.find(params[:id])
+    
+    if @bill.update
+      redirect_to @bill, notice: "#{@bill.item}（#{@bill.price}円）について、更新しました。"
+    else
+      render :edit
+    end
+  
+  end
+
+  〜 destroyアクション + privateメソッドを省略 〜
+
+```
+
+続いて、フラッシュメッセージ（成功）を表示させるようにする。  
+
+show.html.slimにredirectすることとしているので、  
+show.html.slimにコードを加える必要があるのだが、既にここについてはcreateアクションの作業時に実装済。  
+
+よって、作業が不要になる。  
+
+続いて、エラーメッセージを表示させる。  
+エラーメッセージは、edit.html.slimに表示させる。  
+
+ここでも、new.html.slimで使っている_form.html.slimのパーシャルに既に実装済みのため、
+そのパーシャルを利用しているedit.html.slimには、何もしなくともエラーメッセージが表示されるはずである。  
+
+<a href="https://gyazo.com/a92c4d9ae5fdf6d23383ac31852c2b41"><img src="https://i.gyazo.com/a92c4d9ae5fdf6d23383ac31852c2b41.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+エラー、こんにちは。  
+ArgumentErrorは、引数の数が違ったり、期待する値でない場合に発生。  
+
+調べると、updateメソッドは引数が必要なことが判明。
+よって、以下のとおり書き換える。    
+
+```rb
+# bills_controller.rb
+# updateアクションのみ記載
+
+  def update
+    @bill = Bill.find(params[:id])
+    
+    # 引数にprivateメソッドを指定する
+    if @bill.update(bill_params)
+      redirect_to @bill, notice: "#{@bill.item}（#{@bill.price}円）について、更新しました。"
+    else
+      render :edit
+    end
+  
+  end
+
+  〜 destroyアクション 〜
+
+  private
+
+  def bill_params
+    params.require(:bill).permit(:status, :name, :paid_on, :item, :description, :price, :completed_on)
+  end
+
+```
+
+<a href="https://gyazo.com/a77b56c432761aad99b8047c0646af02"><img src="https://i.gyazo.com/a77b56c432761aad99b8047c0646af02.png" alt="Image from Gyazo" width="600" border
+=1/></a>  
+
+<a href="https://gyazo.com/f19e08ae68b4db28d609c47874fcd932"><img src="https://i.gyazo.com/f19e08ae68b4db28d609c47874fcd932.png" alt="Image from Gyazo" width="600" border
+=1/></a>  
+
+無事、実装できた。  
+
+ちなみに、edit.html.slimの画面で「申請中」となっているのがしっくりこなかったので、  
+エラーメッセージの動作確認前に「申請の修正」に変更した。  
+
+<br><br>
+
+## Issue 3.10 destroyアクションの実装
+---
+
+続いて、destroyアクションの実装を行う。  
+
+<dl>
+<dt>destroyアクション</dt> 
+<dd>Billモデルの該当のidのデータを削除。フラッシュメッセージを表示。</dd>
+<dd>削除前に確認メッセージを表示</dd>
+</dl>
+
+```rb
+# bills_controller.rb
+# destroyアクションのみ記載
+
+  def destroy
+    @bill = Bill.find(params[:id])
+    
+    if @bill.destroy
+      redirect_to root_path, notice: "#{@bill.item}（#{@bill.price}円）を削除しました。"
+    else
+      render :show
+    end
+  end
+
+  〜 destroyアクション 〜
+
+  private
+
+  def bill_params
+    params.require(:bill).permit(:status, :name, :paid_on, :item, :description, :price, :completed_on)
+  end
+```
+
+ルートパスに飛ばし、フラッシュメッセージ（成功）を表示させるようにする。  
+端的にindex.html.slimに記入しても良いが、show.html.slimに記入したコードをパーシャルとして作成し、  
+そのパーシャルファイルをindex.html.slimで呼び出した方がよい。  
+
+そこで、_success.html.slimとして保存して、renderするように設定する。 
+
+続いて、エラーメッセージだが、ユーザーが値を入力する余地がなく、失敗が想定できない。  
+よって、エラーメッセージの機能は実装しない。  
+
+そして、削除前の確認メッセージであるが、show.html.slimに以下のとおり記入する。  
+これは、railsの標準装備されている機能であり、裏ではJSのコードが動いている。  
+
+[\[コードリーディング\] link\_toの:methodと:confirmの挙動 \- Qiita](https://qiita.com/shohei1913/items/c01b8acf93837ca9a927)  
+
+```slim
+/ show.html.slim
+
+/ dataから始まるコードを追加
+= link_to '削除', bill_path(@bill), method: :delete, data: {confirm: "#{@bill.item}（#{@bill.price}円）を削除しますが、よろしいですか？"}, class: 'btn btn-danger'
+```
+
+<br>
+
+フラッシュメッセージは、以下のとおり実装できた。  
+<a href="https://gyazo.com/dd0dafde1080117c21d0c5135d0372c9"><img src="https://i.gyazo.com/dd0dafde1080117c21d0c5135d0372c9.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+
+<br>
+
+確認メッセージは、以下のとおり実装できたことが確認できた。  
+<a href="https://gyazo.com/89ea0daaee0eea80117c82317ed82114"><img src="https://i.gyazo.com/89ea0daaee0eea80117c82317ed82114.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<br><br>
+
+## Issue 3.11 RSPecを使ってテストコードを書く
+---
+
+まず環境設定から行っていく。  
+RSpecとFactoryBotのインストールは最初に終わっているので、  
+RSpecのgenerateコマンドを使って、rspecをインストールする。  
+
+```
+bin/rails g rspec:install
+```
+
+使わないMinitest用のディレクトリを削除する。  
+
+```
+rm -r ./test
+```
+
+Capybaraの準備をする。  
+以下のコードを該当ファイルに加える。  
+
+```rm
+# spec/spec_helper.rb
+
+require 'capybara/spec'
+
+RSpec.configure do |config|
+  config.before(:each, type: :system) do
+    driven_by :selenium_chrome_headless
+  end
+```
+
+<br>
+
+### 何のテストコードを書くか
+---
+
+そもそも論として、ここにつまづいた。  
+まだアプリの設計自体が非常にシンプルなCRUD機能が備わっているだけのものだが、  
+とりあえず思いついたものを箇条書きにしてみた。
+
+- indexにて作成したbillsが表示されているか
+  - 未精算済と精算済で分かれて表示されているか 
+- indexからshowに移動し、その後editに移動し、updateやdeleteができるか
+  - showにて表示されているか
+  - editにて表示されているか
+  - updateが反映されるか
+  - updateした内容が画面に表示されているか
+  - deleteが反映されるか
+  - deleteした後、indexにて適切に画面に表示されているか（不要？）
+- indexからnewに移動し、その後createできるか
+  - newにて表示されているか（空だから不要？）
+  - createが反映されているか
+  - createされてあと、showにて表示されているか
+- Create, Update, Delete の動作に置いて、バリデーションがきちんと対応できているか
+
+なお、現場railsと伊藤さんの以下の記事を参考に読んでみた。  
+
+[【初心者向け】テストコードの方針を考える（何をテストすべきか？どんなテストを書くべきか？） \- Qiita](https://qiita.com/jnchito/items/2a5d3e15761fd413657a)  
+
+書きながらやるべき範囲・内容が変わっていくだろうが、以上を確認するようなテストを書いていきたい。  
+
+ただし、RSpecに関しては勉強が明らかに不足しているので、あくまで練習を目的とし、
+十分なテストができなくとも気にしないこととする。  
+
+<br>
+
+### 一覧画面に表示されるか（FactoryBotの作成）
+---
+
+さて、早速書いていく・・・
+と思ったが、流石に勉強量が不十分なので、途方に暮れる。  
+
+そこで、現場Railsに合わせるような形で、精算の申請が上がった際、  
+一覧画面に表示されるか確認するようなテストを書いてみたい。  
+
+テストを活用するような形で、未精算のデータと精算済のデータを作成し、  
+それぞれが該当の箇所にきちんと表示されるようなアプリに回収を行っていきたい。  
+（現在は、差し当たり未精算のデータが精算済のところに表示されるような設計となっている）  
+
+まず、FactoryBotでテストデータを用意する。  
+もう少し抽象的な形でも書けるようだが、具体的な未精算データと精算済データを用意してみた。  
+
+カラムを追加したりした場合、RSpecの方が反映されていない？ようだったので、  
+手動でpaid_onカラムを用意し、completed_onカラムを作成した。  
+
+```rb
+# spec/factories/bills.rb
+# 今やっと気づいた。completed_onを作ったから、statusという項目が不要だ。
+# 技術不足なので、表示されるか確認するためのデータを手動で用意してみた。
+
+FactoryBot.define do
+  factory :uncompleted_bill_success, class: Bill do 
+    status { false }
+    name { "部員A" }
+    paid_on { "2020-05-21" }
+    item { "大会参加費A" }
+    description { "金ないので早めの返金、お願いします！！！" }
+    price { 20000 }
+    completed_on { nil }
+  end
+  factory :uncompleted_bill_failure, class: Bill do 
+  # price 0 とした。また、上記のデータと判別がつくようにnameなどを変えてみた。
+    status { false }
+    name { "部員B" }
+    paid_on { "2020-05-22" }
+    item { "大会参加費B" }
+    description { "金ないので早めの返金、お願いします！！！" }
+    price { 0 }
+    completed_on { nil }
+  end
+  factory :completed_bill_success, class: Bill do 
+    status { true }
+    name { "部員C" }
+    paid_on { "2020-05-01" }
+    item { "サッカーボールC" }
+    description { "旅行で不在にしているので、帰ってきてからで大丈夫です" }
+    price { 6000 }
+    completed_on { "2020-05-11" }
+  end
+  factory :completed_bill_failure, class: Bill do 
+  # price 0 とした。また、上記のデータと判別がつくようにnameなどを変えてみた。
+    status { true }
+    name { "部員D" }
+    paid_on { "2020-05-02" }
+    item { "サッカーボールD" }
+    description { "旅行で不在にしているので、帰ってきてからで大丈夫です" }
+    price { 0 }
+    completed_on { "2020-05-12" }
+  end
+end
+```
+
+<br>
+
+### SpecSystemの作成（FactoryBotの作成）
+---
+
+続いて、SystemSpecのコードを書いていく。
+大枠を書いていく。  
+
+```rb
+# spec/system/bills_spec.rb
+
+require 'rails_helper'
+
+describe 'Bill管理機能', type: :system do
+  describe '一覧表示機能' do
+    before do
+      # uncompleted_bill_success（未精算）を作成する
+      # uncompleted_bill_failure（未精算）を作成する
+      # completed_bill_success（精算済）を作成する
+      # completed_bill_failure（精算済）を作成する
+    end
+    context 'index.html.slimにアクセス' do
+      before do
+        # index.html.slimにアクセス
+      end
+    end
+    it '未精算のbillが表示される' do
+      # 未精算のbillが然るべきところに表示されているか確認
+    end
+    it '精算済のbillが表示される' do
+      # 精算済のbillが然るべきところに表示されているか確認
+    end
+  end
+end
+```
+
+次に、# に該当するところをコードで置き換えていく。 
+
+まず、4つのbillsを作成する。
+
+```rb
+# spec/system/bills_spec.rb
+# 該当箇所のみ
+
+describe 'Bill管理機能', type: :system do
+  describe '一覧表示機能' do
+    before do
+      # 属性を書き換えて格納することもできるが、ここはそのままのテストデータを使用する
+      uncompleted_bill_success = FactoryBot.create(:uncompleted_bill_success)
+      uncompleted_bill_failure = FactoryBot.create(:uncompleted_bill_failure)
+      completed_bill_success = FactoryBot.create(:completed_bill_success)
+      completed_bill_failure = FactoryBot.create(:completed_bill_failure)
+    end
+
+  〜以下、省略〜
+```
+
+<br>
+
+### index.html.slimを表示する
+---
+
+次にindex.html.slimにアクセスするコードを書く。  
+以下のコードを追加する。  
+
+```rb
+# 該当箇所のみ記載
+
+before 'index.html.slimにアクセス' do
+  visit bills_path
+end
+```
+
+<br>
+
+### 作成済のbillsの名称が表示されているか確認する
+---
+
+次に、indexで未精算及び精算済のbillsが表示されるか確認するコードを書く。  
+
+ここからは、現場Railsのもろパクリでは対応できなくなってきたので、  
+伊藤さんの別の記事を参照する。  
+
+[使えるRSpec入門・その1「RSpecの基本的な構文や便利な機能を理解する」 \- Qiita](https://qiita.com/jnchito/items/42193d066bd61c740612)  
+[使えるRSpec入門・その2「使用頻度の高いマッチャを使いこなす」 \- Qiita](https://qiita.com/jnchito/items/2e79a1abe7cd8214caa5)  
+[使えるRSpec入門・その4「どんなブラウザ操作も自由自在！逆引きCapybara大辞典」 \- Qiita](https://qiita.com/jnchito/items/607f956263c38a5fec24)  
+
+また、未精算・精算済の分類がきちんとされているか確認したかったので、こちらも参照した。  
+具体的には、Page全体ではなく把握て絞り込んだ領域内の値で判定したい場合の書き方を参考にした。  
+
+[Rspec Capybaraで実際テストを書いて困ったシチュエーションの解消法 \- Qiita](https://qiita.com/kon_yu/items/52a0f5f0016564486061#page%E5%85%A8%E4%BD%93%E3%81%A7%E3%81%AF%E3%81%AA%E3%81%8F%E6%8A%8A%E6%8F%A1%E3%81%A6%E7%B5%9E%E3%82%8A%E8%BE%BC%E3%82%93%E3%81%A0%E9%A0%98%E5%9F%9F%E5%86%85%E3%81%AE%E5%80%A4%E3%81%A7%E5%88%A4%E5%AE%9A%E3%81%97%E3%81%9F%E3%81%84%E6%99%82) 
+
+なお、index.html.slimにある二つのテーブルが区別できるようにしたかったので、  
+未精算 =>uncompleted、精算済 => completed という形でクラスを新たに割り当てた。  
+
+追加するコードであるが、最終的に以下のとおりとなった。  
+
+```rb
+# 該当箇所のみ記載
+
+it '未精算のbills（成功）が未精算テーブルに表示される' do
+  expect(find(".uncompleted")).to have_content '大会参加費A'
+end
+it '未精算のbills（失敗）が未精算テーブルに表示されない' do
+  expect(find(".uncompleted")).not_to have_content '大会参加費B'
+end
+it '精算済のbill（成功）が精算済テーブルに表示される' do
+  expect(find(".completed")).to have_content 'サッカーボールC'
+end
+it '精算済のbill（失敗）が精算済テーブルに表示されない' do
+  expect(find(".completed")).not_to have_content 'サッカーボールD'
+end
+```
+
+<br>
+
+### テストの実行
+---
+
+さて、完成したbills_spec.rbだが、以下のとおりとなった。  
+こちらのファイルをsystemディレクトリを作成し、bill_spec.rbとして保存。  
+
+```rb
+# spec/system/bills_spec.rb
+
+require 'rails_helper'
+
+describe 'Bill管理機能', type: :system do
+  describe '一覧表示機能' do
+    before do
+      uncompleted_bill_success = FactoryBot.create(:uncompleted_bill_success)
+      uncompleted_bill_failure = FactoryBot.create(:uncompleted_bill_failure)
+      completed_bill_success = FactoryBot.create(:completed_bill_success)
+      completed_bill_failure = FactoryBot.create(:completed_bill_failure)
+    end
+    
+    context 'index.html.slimにアクセス' do
+      before do
+        visit bills_path
+      end
+    end
+
+    # 機能に分けて分類。表示されてはいけないものについては、範囲限定の必要がないので外した。
+    # そもそも、schemaに反するので、factorybotが作成されないかも。。。
+    describe 'billsが該当箇所に表示されるか' do
+      it '未精算のbills（成功）が未精算テーブルに表示される' do
+        expect(find(".uncompleted")).to have_content '大会参加費A'
+      end
+      it '精算済のbill（成功）が精算済テーブルに表示される' do
+        expect(find(".completed")).to have_content 'サッカーボールC'
+      end
+    end
+    describe 'price 0 であるbillsがvalidationに引っ掛かって非表示となる' do
+      it '未精算のbills（失敗）が未精算テーブルに表示されない' do
+        expect.not_to have_content '大会参加費B'
+      end
+      it '精算済のbill（失敗）が精算済テーブルに表示されない' do
+        expect.not_to have_content 'サッカーボールD'
+      end
+    end
+  end
+end
+```
+
+やっと完成した。実行してみる。  

@@ -1779,14 +1779,13 @@ RSpec.configure do |config|
 と思ったが、流石に勉強量が不十分なので、途方に暮れる。  
 
 そこで、現場Railsに合わせるような形で、精算の申請が上がった際、  
-一覧画面に表示されるか確認するようなテストを書いてみたい。  
+一覧画面に表示されるか確認するようなシステムテストを書くこととする。  
 
-テストを活用するような形で、未精算のデータと精算済のデータを作成し、  
-それぞれが該当の箇所にきちんと表示されるようなアプリに回収を行っていきたい。  
+このテストを活用して、未精算のデータと精算済のデータが該当の箇所に  
+きちんと表示されるようアプリの改修に役立てていきたい。  
 （現在は、差し当たり未精算のデータが精算済のところに表示されるような設計となっている）  
 
 まず、FactoryBotでテストデータを用意する。  
-もう少し抽象的な形でも書けるようだが、具体的な未精算データと精算済データを用意してみた。  
 
 カラムを追加したりした場合、RSpecの方が反映されていない？ようだったので、  
 手動でpaid_onカラムを用意し、completed_onカラムを作成した。  
@@ -1794,46 +1793,27 @@ RSpec.configure do |config|
 ```rb
 # spec/factories/bills.rb
 # 今やっと気づいた。completed_onを作ったから、statusという項目が不要だ。
-# 技術不足なので、表示されるか確認するためのデータを手動で用意してみた。
 
 FactoryBot.define do
-  factory :uncompleted_bill_success, class: Bill do 
+  # 未精算の申請データ
+  factory :uncompleted_bill, class: Bill do 
     status { false }
     name { "部員A" }
     paid_on { "2020-05-21" }
-    item { "大会参加費A" }
+    item { "大会参加費" }
     description { "金ないので早めの返金、お願いします！！！" }
     price { 20000 }
     completed_on { nil }
   end
-  factory :uncompleted_bill_failure, class: Bill do 
-  # price 0 とした。また、上記のデータと判別がつくようにnameなどを変えてみた。
-    status { false }
-    name { "部員B" }
-    paid_on { "2020-05-22" }
-    item { "大会参加費B" }
-    description { "金ないので早めの返金、お願いします！！！" }
-    price { 0 }
-    completed_on { nil }
-  end
-  factory :completed_bill_success, class: Bill do 
+  # 精算済のデータ
+  factory :completed_bill, class: Bill do 
     status { true }
-    name { "部員C" }
+    name { "部員B" }
     paid_on { "2020-05-01" }
-    item { "サッカーボールC" }
+    item { "サッカーボール" }
     description { "旅行で不在にしているので、帰ってきてからで大丈夫です" }
     price { 6000 }
     completed_on { "2020-05-11" }
-  end
-  factory :completed_bill_failure, class: Bill do 
-  # price 0 とした。また、上記のデータと判別がつくようにnameなどを変えてみた。
-    status { true }
-    name { "部員D" }
-    paid_on { "2020-05-02" }
-    item { "サッカーボールD" }
-    description { "旅行で不在にしているので、帰ってきてからで大丈夫です" }
-    price { 0 }
-    completed_on { "2020-05-12" }
   end
 end
 ```
@@ -1854,29 +1834,25 @@ require 'rails_helper'
 describe 'Bill管理機能', type: :system do
   describe '一覧表示機能' do
     before do
-      # uncompleted_bill_success（未精算）を作成する
-      # uncompleted_bill_failure（未精算）を作成する
-      # completed_bill_success（精算済）を作成する
-      # completed_bill_failure（精算済）を作成する
+      # uncompleted_bill（未精算）を作成する
+      # completed_bill（精算済）を作成する
     end
     context 'index.html.slimにアクセス' do
       before do
         # index.html.slimにアクセス
       end
-    end
-    it '未精算のbillが表示される' do
-      # 未精算のbillが然るべきところに表示されているか確認
-    end
-    it '精算済のbillが表示される' do
-      # 精算済のbillが然るべきところに表示されているか確認
+      it '未精算のbillが表示される' do
+        # 未精算のbillが然るべきところに表示されているか確認
+      end
+      it '精算済のbillが表示される' do
+        # 精算済のbillが然るべきところに表示されているか確認
+      end
     end
   end
 end
 ```
 
-次に、# に該当するところをコードで置き換えていく。 
-
-まず、4つのbillsを作成する。
+次に、# に該当するところをコードで置き換えていく。  
 
 ```rb
 # spec/system/bills_spec.rb
@@ -1885,11 +1861,8 @@ end
 describe 'Bill管理機能', type: :system do
   describe '一覧表示機能' do
     before do
-      # 属性を書き換えて格納することもできるが、ここはそのままのテストデータを使用する
-      uncompleted_bill_success = FactoryBot.create(:uncompleted_bill_success)
-      uncompleted_bill_failure = FactoryBot.create(:uncompleted_bill_failure)
-      completed_bill_success = FactoryBot.create(:completed_bill_success)
-      completed_bill_failure = FactoryBot.create(:completed_bill_failure)
+      FactoryBot.create(:uncompleted_bill)
+      FactoryBot.create(:completed_bill)
     end
 
   〜以下、省略〜
@@ -1935,20 +1908,30 @@ end
 
 追加するコードであるが、最終的に以下のとおりとなった。  
 
+せっかくなので、未精算のbillsが「精算済」テーブルに表示されないか、  
+また、逆に精算済のbillsが「未精算」テーブルに表示されないか、  
+確認できるようなコードを追加した。  
+
+なお、今のところ未精算・精算済にかかわらず、billsデータを未精算テーブル及び精算済テーブルに  
+表示されるようなindex.html.slimテーブルになっているので、２番目のテストと４番目のテストはパスしないはずである。  
+
 ```rb
 # 該当箇所のみ記載
 
-it '未精算のbills（成功）が未精算テーブルに表示される' do
-  expect(find(".uncompleted")).to have_content '大会参加費A'
+it '未精算のbillsが「未精算」テーブルに表示される' do
+  expect(find(".uncompleted")).to have_content '大会参加費'
 end
-it '未精算のbills（失敗）が未精算テーブルに表示されない' do
-  expect(find(".uncompleted")).not_to have_content '大会参加費B'
+
+it '未精算のbillsが「精算済」テーブルに表示されない' do
+  expect(find(".completed")).not_to have_content '大会参加費'
 end
-it '精算済のbill（成功）が精算済テーブルに表示される' do
-  expect(find(".completed")).to have_content 'サッカーボールC'
+
+it '精算済のbillが「精算済」テーブルに表示される' do
+  expect(find(".completed")).to have_content 'サッカーボール'
 end
-it '精算済のbill（失敗）が精算済テーブルに表示されない' do
-  expect(find(".completed")).not_to have_content 'サッカーボールD'
+
+it '精算済のbillsが「未精算」テーブルに表示されない' do
+  expect(find(".uncompleted")).not_to have_content 'サッカーボール'
 end
 ```
 
@@ -1965,41 +1948,242 @@ end
 
 require 'rails_helper'
 
+require 'rails_helper'
+
 describe 'Bill管理機能', type: :system do
+  
   describe '一覧表示機能' do
+    
     before do
-      uncompleted_bill_success = FactoryBot.create(:uncompleted_bill_success)
-      uncompleted_bill_failure = FactoryBot.create(:uncompleted_bill_failure)
-      completed_bill_success = FactoryBot.create(:completed_bill_success)
-      completed_bill_failure = FactoryBot.create(:completed_bill_failure)
+      FactoryBot.create(:uncompleted_bill)
+      FactoryBot.create(:completed_bill)
     end
     
     context 'index.html.slimにアクセス' do
       before do
         visit bills_path
       end
+
+      it '未精算のbillsが「未精算」テーブルに表示される' do
+        expect(find(".uncompleted")).to have_content '大会参加費'
+      end
+
+      it '未精算のbillsが「精算済」テーブルに表示されない' do
+        expect(find(".completed")).not_to have_content '大会参加費'
+      end
+
+      it '精算済のbillが「精算済」テーブルに表示される' do
+        expect(find(".completed")).to have_content 'サッカーボール'
+      end
+    
+      it '精算済のbillsが「未精算」テーブルに表示されない' do
+        expect(find(".uncompleted")).not_to have_content 'サッカーボール'
+      end
+
     end
 
-    # 機能に分けて分類。表示されてはいけないものについては、範囲限定の必要がないので外した。
-    # そもそも、schemaに反するので、factorybotが作成されないかも。。。
-    describe 'billsが該当箇所に表示されるか' do
-      it '未精算のbills（成功）が未精算テーブルに表示される' do
-        expect(find(".uncompleted")).to have_content '大会参加費A'
-      end
-      it '精算済のbill（成功）が精算済テーブルに表示される' do
-        expect(find(".completed")).to have_content 'サッカーボールC'
-      end
-    end
-    describe 'price 0 であるbillsがvalidationに引っ掛かって非表示となる' do
-      it '未精算のbills（失敗）が未精算テーブルに表示されない' do
-        expect.not_to have_content '大会参加費B'
-      end
-      it '精算済のbill（失敗）が精算済テーブルに表示されない' do
-        expect.not_to have_content 'サッカーボールD'
-      end
+  end
+
+end
+```
+
+やっと完成した。  
+実行してみる。  
+
+<a href="https://gyazo.com/1149aff1c796ea1afee0224eac00490c"><img src="https://i.gyazo.com/1149aff1c796ea1afee0224eac00490c.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+無事、想定どおりの動きとなった。  
+スクリーンショットも下記のとおりとなった。 
+
+<a href="https://gyazo.com/85b2c132781c357b3be5003904b8eb98"><img src="https://i.gyazo.com/85b2c132781c357b3be5003904b8eb98.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+なお、場所の調整までは勝手にしてくれないようで、精算済のテーブルの方でどうなっているかまでは確認できなかった。  
+そこで、以下を確認して、スクリーンショットのサイズを大きくしてみた。  
+
+[【Capybara】Rails rspecシステムテストのScreenshot全画面表示設定 \- Qiita](https://qiita.com/AK4747471/items/2c4b58950c7f7dc2c5f7)  
+
+また、実はRails６系とRSpecの３系は相性が悪く、スクリーンショットが全て白くなってしまっていたので、  
+以下を参考にして、RSpecのバージョンを４系に変更した。
+
+https://teratail.com/questions/211004
+
+想像以上に大きくなったが、おかげで下記のとおり確認することができた。  
+あまりにも大きかったので、該当箇所を切り取って貼付した。  
+
+<a href="https://gyazo.com/3c3d059d02612980d5254ff8fd8ab75e"><img src="https://i.gyazo.com/3c3d059d02612980d5254ff8fd8ab75e.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<br>
+
+### RSpecをやっていて直面したエラー
+---
+
+今回、想像以上に多くのエラーに直面したので、箇条書き（＋説明）でメモを記す。  
+
+RSpecだけではないが、とにかくシンプルなものを作ってエラーがないことを確認し、  
+その基礎の上に、少しずつ加えていくのが大事だと実感を持って感じた。  
+
+上手くいく場合は問題がないが、失敗した場合、問題の特定に非常に時間がかかってしまう。  
+  
+- RSpecのテストを始める前に簡単なテストが動くか確認すること
+  - 環境構築系のトラブルなのか、コードの問題なのか切り分けが難しい
+  - 先に簡単なテストが動くことを確認しておけば、コードの問題であると推定することができる
+  - Rails console上で、FactoryBot.createしてインスタンスが作成できるか確認するのも有効
+- RSpecの環境構築系のトラブル
+  - Gemfileに必要なgemが導入されているか
+  - bin/rails g rspec:installをしたか
+  - Capybaraの設定をspec_helper.rbで行ったか
+    - require 'capybara/rspec'のコードを加えたか
+  - Rails6系とRSpecの3系の組み合わせでないか
+    - 動くが、スクリーンショットが取れない
+    - RSpecの4系と組み合わせること
+- FactoryBotのトラブル
+  - テーブル上で制約がかかっているようなファクトリではないか
+    - nullが受け入れない形となっているのに、nullを値としていないか
+  - そもそもカラムはDBと一致しているか
+    - migrateコマンドを実行して、カラムに変更を加えた場合は要注意
+- Specのトラブル
+  - コードを書く際、インデント、endの数、ネスティングに誤りがないか
+    - 今回は、contextにbeforeだけでなく、itもネスティングされるのに気づくのに１時間以上かかってしまった。。。  
+  - require 'rails_helper' を忘れていないか
+
+<br><br>
+
+## Issue 4.1 Userモデルの追加 + （Associationはしません 笑）
+---
+
+ついてに、管理者画面の実装に入る。  
+まず、Userモデルを追加する。  
+
+ちょっと機能実装に時間がかかっているので、ありえないのだけれど、  
+BillはUserに紐付けないこととする。  
+
+また、UserもAdminだけとする。  
+
+変なアプリケーションではあるが、誰でも申請を出したり、他人の申請まで修正・削除できるけれど、  
+精算済にしたり、未精算に変更できるのはAdminしかできない。  
+
+そういったイメージでやっていく。  
+
+あと、これもスルーすることになりそうだけれど、Adminが精算済にしたら勝手に修正や削除ができないような仕様にしたい。  
+とはいえ、大変なのでとりあえずGithubのissueに投げるだけ投げておくことにする。  
+
+・・・  
+
+さて、作業に取り掛かっていく。  
+まず、マイグレーションファイルを作成する。  
+
+```
+bin/rails g model user username:string email:string password_digest:string admin:boolean
+```
+
+なお、パスワードはセキュリティを考えて、password_digestを使うこととした。  
+そして、マイグレーションファイルにnullやuniqueness制約を設定する。  
+
+```rb
+class CreateUsers < ActiveRecord::Migration[6.0]
+  def change
+    create_table :users do |t|
+      t.string :username, null: :false, unique: :true
+      t.string :email, null: :false, unique: :true
+      t.string :password_digest, null: :false
+      t.boolean :admin, default: :false, null: :false
+
+      t.timestamps
     end
   end
 end
 ```
 
-やっと完成した。実行してみる。  
+マイグレートする。  
+
+```
+bin/rails db:migrate
+```
+
+確認は大事なので、rails console でインスタンスが作れるか確認する。  
+
+```
+NameError (uninitialized constant User)
+```
+
+はい、こんにちは。  
+会いたくなかったけど、確認した甲斐がありました。  
+
+・・・色々試したが、コマンドラインを再起動したら問題が解決した。。。  
+釈然としないけど、どういうことなんだろう。  
+
+何かが反映されていなかったのだろうか。  
+
+あと、Userモデルのバリデーションを設定しておく。  
+
+```rb
+# user.rb
+
+class User < ApplicationRecord
+  validates :username, presence: true, uniqueness: true
+  validates :email, presence: true, uniqueness: true
+  validates :password_digest, presence: true
+  validates :admin, inclusion: {in: [true, false]}
+end
+```
+
+<br><br>
+
+## Issue 4.2 bcryptを使用する（パスワードのダイジェスト）
+---
+
+Gemは導入済であるため、作業は極めてシンプル。 
+Modelにassociationするような形で、以下のコードをuser.rbに加えればよい。  
+
+```rb
+class User < ApplicationRecord
+  has_secure_password
+
+  〜 以下、省略 〜
+end
+```
+
+rails console で確認したところ、無事パスワードがハッシュ化されていた。 
+
+<a href="https://gyazo.com/6b0516148350a3f5ddf9306e04b1297c"><img src="https://i.gyazo.com/6b0516148350a3f5ddf9306e04b1297c.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<br><br>
+
+
+######## ここまで作成 ######## 
+
+## Issue 4.3 Adminのindexビューを作成する（ほぼ既に作ったものをコピペする形で済ませる！）
+---
+
+まず、コントローラを作成する必要がある。  
+Adminでディレクトリに集中させるため、以下のとおりコマンドラインに記入する。  
+
+```
+bin/rails g controller Admin::Users new show edit index
+```
+
+なお、自動生成されるビューファイルなどは必要だが、ルーティングの設定については不要であるため、
+手動にて、routes.rbに自動的に加えられたコードを削除する。  
+
+##### ビュー周り  
+
+
+
+indexのビューについては、通常ユーザーが使うものとコードが全く一緒であるが、  
+今後は表示されるものが変わるかもしれないので、パーシャル化は行わないこととする。  
+
+なお、billsフォルダ内のパーシャルについても、考え方によるが、ほぼコピペしたものを  
+admin/usersフォルダ内に置いておくこととする。  
+
+* ここで、事前に設計しておくことの重要さ、また柔軟に対応できるような設計構築の重要性を感じた。 
+
+続いて、コントローラの設定を行う。  
+こちらについても、基本的には一般ユーザーと同様の設計になるはずであり、下記のとおり設定した。  
+
+##### コントローラ周り  
+
+コントローラの内容についても、基本的にはコピペで問題がなさそうなので、
+とりあえず、bills_controller.rbの内容を貼付する。（適宜、機能実装の際に修正していく）。
+
+```rb
+

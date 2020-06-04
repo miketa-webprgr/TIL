@@ -2149,41 +2149,121 @@ rails console で確認したところ、無事パスワードがハッシュ化
 
 <br><br>
 
-
-######## ここまで作成 ######## 
-
-## Issue 4.3 Adminのindexビューを作成する（ほぼ既に作ったものをコピペする形で済ませる！）
+## Issue 4.3 画面遷移図の修正（レイアウトの統一や微修正）
 ---
 
-まず、コントローラを作成する必要がある。  
-Adminでディレクトリに集中させるため、以下のとおりコマンドラインに記入する。  
+Admin関連の画面遷移図を修正する。  
+以下の点に留意して、下記のとおり作成した。  
+
+- ビューの実装を簡単にする為、出来る限り既に作ったものを流用することとした。  
+
+<a href="https://gyazo.com/819dec388261b511ffd031bfb4db0a83"><img src="https://i.gyazo.com/819dec388261b511ffd031bfb4db0a83.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+とりあえず、レイアウトに関しては、ナビゲーションバー、精算済・未精算と変更できる
+ボタン以外には、変更を加えないものとする。  
+
+また、コントローラに関しても、基本的には精算済・未精算の機能以外の部分については、
+同じような動きとなるはずである。  
+
+よって、とりあえずは、これまで作成したものと同じように実装していくことにする。  
+なお、作業にあたっては、動作確認を細かく行い、エラー等が起きないか確認を念入りに行っていくこととする。 
+
+<br><br>
+
+## Issue 4.4 Adminの基礎部分を固める（これまでの作業をコピペする・・・とも言う 笑）  
+---
+
+さて、Admin::Bills Controllerを作成する。  
+Userモデルは、とりあえずBillと紐付けないので、そのまま置いておく。  
 
 ```
-bin/rails g controller Admin::Users new show edit index
+ bin/rails g controller Admin::Bills new edit show index
 ```
 
-なお、自動生成されるビューファイルなどは必要だが、ルーティングの設定については不要であるため、
-手動にて、routes.rbに自動的に加えられたコードを削除する。  
+ルーティング設定は既に終えているので、自動で作成されてしまうルーティングのコードは削除する。  
 
-##### ビュー周り  
+詳細については記載しないが、ビュー周りについてはまずリンク先が狙ったところとなるように修正を施した。  
+ただ、設計があまりよろしくないせいで、力技でリンク先を指定せざるをえないことが多かった。  
+（URLのヘルパーメソッドが機能しないなどの問題があった。単純にヘルパーメソッドを使いこなせていないだけかもしれないが）  
 
+力技でどうやるか、調べるのにそれなりの時間がかかってしまった。  
+仕組みを理解する上で為になったが、Railsの規約に沿った設計方法について学習を深めていく必要があると感じた。  
 
+[Rails 5\.1〜6: 'form\_with' APIドキュメント完全翻訳｜TechRacho（テックラッチョ）〜エンジニアの「？」を「！」に〜｜BPS株式会社](https://techracho.bpsinc.jp/hachi8833/2017_05_01/39502)  
+[\[Rails\]params\[:id\]に値を渡す \- Qiita](https://qiita.com/yamamoto_shuji/items/8b4d139c6439ec57a9bb)  
+[【Rails入門説明書】link\_toについて解説 \| WEBCAMP NAVI](https://web-camp.io/magazine/archives/16857)
 
-indexのビューについては、通常ユーザーが使うものとコードが全く一緒であるが、  
-今後は表示されるものが変わるかもしれないので、パーシャル化は行わないこととする。  
+また、共通化できそうな部分は多かったような気がするが、技術不足・期限遵守を優先して、  
+汚いコードのままアプリ作成を進めることとする。  
 
-なお、billsフォルダ内のパーシャルについても、考え方によるが、ほぼコピペしたものを  
-admin/usersフォルダ内に置いておくこととする。  
+<br><br>
 
-* ここで、事前に設計しておくことの重要さ、また柔軟に対応できるような設計構築の重要性を感じた。 
+## Issue 4.5 Adminのメニューバーを作成する  
+---
 
-続いて、コントローラの設定を行う。  
-こちらについても、基本的には一般ユーザーと同様の設計になるはずであり、下記のとおり設定した。  
+調べたらlayoutメソッドというものがあった。  
 
-##### コントローラ周り  
+application.html.slimを読み込まず、該当のhtml.slimをレイアウトとして適用できるようなので、  
+これをadmin/bills_controller.rbの中で適用する。  
 
-コントローラの内容についても、基本的にはコピペで問題がなさそうなので、
-とりあえず、bills_controller.rbの内容を貼付する。（適宜、機能実装の際に修正していく）。
+[【Rails】layoutメソッドの使い方をマスターしよう！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/layout)  
+
+以下のとおり、該当のコントローラで layout で始まるコードを追加する。  
 
 ```rb
+# Admin/bills_controller.rb
 
+class Admin::BillsController < ApplicationController
+  layout 'admin_application'
+
+〜 省略 〜
+```
+
+そして、admin_application.html.slimファイルをapplication.html.slimと同じ階層に保存し、  
+そのファイルを以下のように作成する。（ベースはapplication.html.slimを採用する）  
+
+```slim
+/ admin_application.html.slim
+
+doctype html
+html
+  head
+    title
+      | 【管理者】部費管理マネジャー
+    = csrf_meta_tags
+    = csp_meta_tag
+    = stylesheet_link_tag 'application', media: 'all', 'data-turbolinks-track': 'reload'
+    = javascript_pack_tag 'application', 'data-turbolinks-track': 'reload'
+  body
+    .app-title.navbar.navbar-expand-md.navbar-dark.bg-dark
+      .navbar-brand 【管理者】部費管理マネジャー
+      ul.navbar-nav.ml-auto
+        li.nav-item= link_to '申請一覧', admin_bills_path, class: 'nav-link'
+        li.nav-item= link_to '代理申請する', new_admin_bill_path, class: 'nav-link'
+        li.nav-item= link_to '管理者ログアウト', sessions_path, method: :delete, class: 'nav-link'
+
+    .container
+      = yield
+
+```
+
+すると、以下のとおりナビゲーションバーを設置できた。  
+
+<a href="https://gyazo.com/c58eae41ced1f5ffa5e355b8051a2185"><img src="https://i.gyazo.com/c58eae41ced1f5ffa5e355b8051a2185.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<br><br>
+
+## Issue 4.6 精算済・未精算の変更ボタンを実装する  
+---
+
+まず、ビューの実装から始め、コントローラで処理の実装を行うことする。  
+具体的には、from_withで隠しパラメータを送るような形で対応したい。  
+
+なお、completionのupdateとdestroyアクションが使えるよう設定したので、活用していく。  
+
+```
+= link_to '会計が終わったので精算済にする', admin_bill_completion_path(@bill), method: :update, class: 'btn btn-info float-right'
+```
+
+ここで、methodがpatchにすべきところを気づかず、１時間以上時間が無駄に流れてた。。。  
+ただ、自分で気付けるようになってきたので、自走力は付いてきたような気がする。  

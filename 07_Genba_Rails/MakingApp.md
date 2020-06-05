@@ -2259,11 +2259,446 @@ html
 まず、ビューの実装から始め、コントローラで処理の実装を行うことする。  
 具体的には、from_withで隠しパラメータを送るような形で対応したい。  
 
-なお、completionのupdateとdestroyアクションが使えるよう設定したので、活用していく。  
+admin/billsのshow.html.slimのファイルを開き、「編集」「削除」のボタンから少し距離を置いて、  
+右側に「返金したので精算済にする」ボタンを実装する（後ほど「未精算に戻す」ボタンも実装する）。
+
+ボタンクリック後の遷移先は、completionのupdateとdestroyアクションとする。  
+新しいコントローラが必要になるので、生成だけは先に行っておく。  
+
+以下のコードを追加する。
+
+```slim
+/ admin/bills/show.html.slim
+/ 該当箇所のみ記載
+
+/ method: :patch が本当は正解です
+= link_to '返金したので精算済にする', admin_bill_completion_path(@bill), method: :update, class: 'btn btn-info float-right'
+```
+
+また、コントローラも作成する。  
+中身のコードについては後ほど追加することとし、まずきちんと遷移できるか確認することとする。  
 
 ```
-= link_to '会計が終わったので精算済にする', admin_bill_completion_path(@bill), method: :update, class: 'btn btn-info float-right'
+bin/rails g controller Admin::Bills::Completions update destroy
 ```
+
+ルーティングについては既に設定済のため、自動生成されたコードは削除する。  
+
+さて、確認。  
+画面良し。（ちなみに、管理者画面が分かりやすいよう、ナビゲーションバーを黄色にしてみました。色のセンスは諦めてます）  
+
+<a href="https://gyazo.com/5b9bc9af36d1f386d0fa5cd27e7316e2"><img src="https://i.gyazo.com/5b9bc9af36d1f386d0fa5cd27e7316e2.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+これで繋がるはず！  
+
+・・・はい、繋がらない。。。。  
+
+<a href="https://gyazo.com/de716ffa7e9d9f65845f3a846e7e473d"><img src="https://i.gyazo.com/de716ffa7e9d9f65845f3a846e7e473d.png" alt="Image from Gyazo" width="800" border=1 /></a>  
+<a href="https://gyazo.com/b586e8c7b35a9e7eded5472d137ec50c"><img src="https://i.gyazo.com/b586e8c7b35a9e7eded5472d137ec50c.png" alt="Image from Gyazo" width="800" border=1/></a>  
+<a href="https://gyazo.com/fc0da7786b7271326cfab51a808bccfa"><img src="https://i.gyazo.com/fc0da7786b7271326cfab51a808bccfa.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+ルーティングエラー。。。  
+なぜPOSTなんだ。。。  
+PATHは確実に合っているし、paramsはupdateで飛んでいるし。。。  
+
+そう、updateで。  
 
 ここで、methodがpatchにすべきところを気づかず、１時間以上時間が無駄に流れてた。。。  
+
+ルーティングエラーなので、ここにはあまり目を向けず、コントローラ周りばかり無駄に調べてしまった。  
 ただ、自分で気付けるようになってきたので、自走力は付いてきたような気がする。  
+
+<br>
+
+### Billオブジェクトを未精算から精算に書き換える
+---
+
+さて、次にコントローラでBillオブジェクトのstatusをtrueに書き換える。  
+statusは、未精算・精算済のいずれかを表す属性であり、trueは精算済を表す値である。  
+
+```rb
+# admin/bills/completions_controller.rb
+# updateアクションとストロングパラメータ部分を記載
+
+  def update
+    @bill = Bill.find(params[:id])
+    @bill.status = true
+    binding.pry
+
+    if @bill.update(bill_params)
+      redirect_to admin_bills_path, notice: "返金が完了したので、#{@bill.item}（#{@bill.price}円）を「精算済」にしました。"
+    end
+
+  end
+
+  def bill_params
+    params.require(:bill).permit(:status, :name, :paid_on, :item, :description, :price, :completed_on)
+  end
+```
+
+心配なので、覚えたbinding.pryを使って、@billのステータスが書き換えられているか確認する。  
+
+<a href="https://gyazo.com/17431fd38f377969723d25130e439580"><img src="https://i.gyazo.com/17431fd38f377969723d25130e439580.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+到達する前にエラーになった。  
+
+うーん、この辺りを見る。   
+[MySQL \- railsでshowアクションでエラーが出ます。｜teratail](https://teratail.com/questions/50715)  
+
+けど、この辺りの問題ではつまづいていないような気がする。  
+[\[Rails\]コメント削除機能の実装でハマってしまったので一応解決策を。 \- Qiita](https://qiita.com/Jwataru/items/a8e0120dd32761d70bfa)  
+
+直接関係ないが、ここを見ていて気付く。  
+Billのidを取ってきたいんだから、こうやって書くのか！  
+
+```rb
+# 間違い 
+@bill = Bill.find(params[:id])
+
+# 正しい 
+@bill = Bill.find(params[:bill_id])
+```
+
+HAHAHA、うまくいった！！  
+binding.pryでstatusが書き換えられたことも確認！  
+
+<a href="https://gyazo.com/ac5d5ca5bb67923a2acea6d9b896a9d3"><img src="https://i.gyazo.com/ac5d5ca5bb67923a2acea6d9b896a9d3.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+これはうまくいく予感！  
+
+<a href="https://gyazo.com/1d2220a72793d5ac5ef64e9dab400b30"><img src="https://i.gyazo.com/1d2220a72793d5ac5ef64e9dab400b30.png" alt="Image from Gyazo" width="600" border=1/></a>
+
+え。。。エラー地獄すごい。。。  
+ここで、Pikawakaの分かりやすいデバッグ解説を発見。  
+
+[【Rails】updateメソッドの使い方を徹底解説！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/update)  
+
+手順が書いてあったので、順を追ってやっていく。  
+記事に書いてある１番の手順については既に実施済だったので、２番をやってみる。  
+
+> ターミナルで、ストロングパラメータの記述をしているメソッド名（例えばitem_paramsなど）を実行します。  
+>   
+> うまくいっていれば、このような表示がされます。  
+> ・保存するためのカラムのデータが全てハッシュに含まれていること  
+> ・permitted: trueと表示されきちんと許可がされていること  
+> この２点を確認しましょう。  
+
+はい、分かりました！  
+
+```
+[1] pry(#<Admin::Bills::CompletionsController>)> bill_params
+ActionController::ParameterMissing: param is missing or the value is empty: bill
+```
+
+やっぱり、出ませんでした！笑  
+Pikawakaさんによると、ストロングパラメータが間違っている可能性が高いとのことなので、確認してみることにする。  
+
+調べいく内に、新たに参考となるサイトを発見した。  
+[【Ruby on Rails】require と permit の使い方がよく分からない \- きゃまなかのブログ](https://techblog.kyamanak.com/entry/2017/08/29/012909)  
+
+なるほど。  
+そもそもparams.require(:bill)だったり、paramsを打ちこんで、中身を確認すれば良いのか。  
+
+```
+[3] pry(#<Admin::Bills::CompletionsController>)> params.require(:bill)
+ActionController::ParameterMissing: param is missing or the value is empty: bill
+
+[4] pry(#<Admin::Bills::CompletionsController>)> params
+=> <ActionController::Parameters {"_method"=>"patch", "authenticity_token"=>"ごちゃごちゃしたハッシュ化された文字", "controller"=>"admin/bills/completions", "action"=>"update", "bill_id"=>"4"} permitted: false>
+```
+
+これは分かりやすい。  
+じゃあ、paramsとか書き出したら、当然エラーとなるな。。。  
+
+せっかくなので、binding.pryを他のページでも使用して確認したが、おそらくform_withでなく、link_toメソッドを使っているから、  
+paramsにBillの属性に関する値がないのだと思われる。  
+
+うーん、知識不足なので何とも言えないが、form_withでないなら、ストロングパラメータをとっても良いと思う。。。  
+ということで、取っちゃいます！！！  これまでのdestroyメソッドでもストロングパラメータの制約がかかっていなかったし。  
+
+これでどう？
+
+```rb
+# admin/bills/completions_controller.rb
+# updateアクションとストロングパラメータ部分を記載
+
+  def update
+    @bill = Bill.find(params[:bill_id])
+    @bill.status = true
+    binding.pry
+
+    # 引数を@billにしてみた
+    if @bill.update(@bill)
+      redirect_to admin_bills_path, notice: "返金が完了したので、#{@bill.item}（#{@bill.price}円）を「精算済」にしました。"
+    end
+
+  end
+```
+
+<a href="https://gyazo.com/3cc73b45ca41a1ae540f979e4393e9f1"><img src="https://i.gyazo.com/3cc73b45ca41a1ae540f979e4393e9f1.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+難敵。。。 
+無理やりハッシュ化すると突破できるのかもしれないが、やっぱりここはストロングパラメータ方式でやることにする。  
+link_toをform_wtihに変えるところから対応する。面倒くさい。。。  
+
+```slim
+/ admin/bills/show.html.slim
+/ 該当箇所のみ記載
+
+= form_with model: @bill, url: admin_bill_completion_path(@bill), local: true do |f|
+  = f.hidden_field :status, value: true
+  = f.submit '返金したので精算済にする', class: 'btn btn-info float-right'
+```
+
+```rb
+# admin/bills/completions_controller.rb
+# updateアクションのみ記載
+# @bill.status = true は不要となったので削除
+
+  def update
+    @bill = Bill.find(params[:bill_id])
+    binding.pry
+
+    # 引数を@billにしてみた
+    if @bill.update(bill_params)
+      redirect_to admin_bills_path, notice: "返金が完了したので、#{@bill.item}（#{@bill.price}円）を「精算済」にしました。"
+    end
+
+  end
+
+  def bill_params
+    params.require(:bill).permit(:status, :name, :paid_on, :item, :description, :price, :completed_on)
+  end
+```
+
+binding.pryを試す。  
+
+```
+[3] pry(#<Admin::Bills::CompletionsController>)> bill_params
+=> <ActionController::Parameters {"status"=>"true"} permitted: true>
+
+[4] pry(#<Admin::Bills::CompletionsController>)> params
+=> <ActionController::Parameters {"_method"=>"patch", "authenticity_token"=>"ごちゃごちゃしたハッシュ化された文字", "bill"=><ActionController::Parameters {"status"=>"true"} permitted: false>, "commit"=>"返金したので精算済にする", "controller"=>"admin/bills/completions", "action"=>"update", "bill_id"=>"3"} permitted: false>
+
+[5] pry(#<Admin::Bills::CompletionsController>)> params.require(:bill)
+=> <ActionController::Parameters {"status"=>"true"} permitted: false>
+```
+
+[3] pryのとおり、permitted: true とあるので、これでストロングパラメータで弾かれることがないのは分かる。  
+[【Rails】ストロングパラメータの仕組みを理解しよう！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/strong_parameter)  
+[【Ruby on Rails】require と permit の使い方がよく分からない \- きゃまなかのブログ](https://techblog.kyamanak.com/entry/2017/08/29/012909)  
+
+paramsにstatusに係るハッシュがあり、それがbillインスタンスについてpermitメソッドで入力許可されたことにより、  
+[4] pryの段階では permitted: false だけれども、trueに変わる。
+
+・・・という感じだろう。（日本語がひどい。。。。）
+
+また、現場Railsの6−６を読み返す。  
+頭の中で以下のように整理して理解できた。
+
+```
+#### params ####
+=> <ActionController::Parameters {"_method"=>"patch", "authenticity_token"=>"ごちゃごちゃしたハッシュ化された文字", "bill"=><ActionController::Parameters {"status"=>"true"} permitted: false>, "commit"=>"返金したので精算済にする", "controller"=>"admin/bills/completions", "action"=>"update", "bill_id"=>"3"} permitted: false>
+
+#### params.require(:bill)で以下を取り出す ####
+"bill"=><ActionController::Parameters {"status"=>"true"} 
+
+#### params.require(:bill).permit(:status, :name, :paid_on, :item, :description, :price, :completed_on) ####
+permitted: false から true に変更され、update可能になる
+```
+
+また、Strong Parametersの記述を行うのを忘れていたとしてもセキュリティ上の問題が生じないように、  
+permitなどがされていない素のparamsをそのままモデルにマルチアサインしようとした時に例外を発生させるとのこと。  
+
+ここまで理解できると、どうやったらストロングパラメータを外したやり方も気になるところだが、  
+時間がないし、おそらく理解しても実戦で使うことはないので、次に進めることにする。  
+
+<br>
+
+### Billオブジェクトに精算日を入力する
+---
+
+すっかり忘れていたが、completed_on（精算日）もparamsに入れて渡す必要がある。  
+admin/bills/show.html.slimを修正する。  
+
+```slim
+/ admin/bills/show.html.slim
+/ 該当箇所のみ記載
+
+= form_with model: @bill, url: admin_bill_completion_path(@bill), local: true do |f|
+  = f.hidden_field :status, value: true
+  = f.hidden_field :completed_on, value: Time.zone.today
+  = f.submit '返金したので精算済にする', class: 'btn btn-info float-right'
+```
+
+<a href="https://gyazo.com/54f57516f1404bdf5da33a29bd97d802"><img src="https://i.gyazo.com/54f57516f1404bdf5da33a29bd97d802.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+よしよし、精算日が入るようになった。  
+ただ、管理者画面からは、精算日済ボタンを押した後に、精算日を修正できるようになった方がよいかと思うので、  
+status の値がある場合に修正ができるようslimファイルに修正を加えておく。  
+
+<a href="https://gyazo.com/90b0fb4c908f8d7078e322acab2de850"><img src="https://i.gyazo.com/90b0fb4c908f8d7078e322acab2de850.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+無事、修正できるようになった。  
+
+また、細かいが、精算済にした際に出るメッセージを下記のとおり変更した。
+
+```rb
+notice: "返金が完了したので、#{@bill.name}さんの申請「#{@bill.item}（#{@bill.price}円）」を精算済にしました。"
+```
+
+<br>
+
+### 未精算に戻せるようにする
+---
+
+さて、今度はif文を使って、精算済である場合は未精算にするボタンを表示させ、それをクリックすると未精算に変更できるようにする。  
+なお、ポップアップにて確認ダイアログが出力されるようにする。  
+
+```slim
+/ admin/bills/show.html.slim
+
+-if @bill.status == true
+  = form_with model: @bill, url: admin_bill_completion_path(@bill), method: :delete, data: {confirm: "#{@bill.name}さんの申請「#{@bill.item}（#{@bill.price}円）」を未精算に戻しますが、よろしいですか？"}, local: true do |f|
+    = f.hidden_field :status, value: false
+    = f.hidden_field :completed_on, value: nil
+    = f.submit '未精算に戻す', class: 'btn btn-info float-right'
+-else 
+  = form_with model: @bill, url: admin_bill_completion_path(@bill), local: true do |f|
+    = f.hidden_field :status, value: true
+    = f.hidden_field :completed_on, value: Time.zone.today
+    = f.submit '返金したので精算済にする', class: 'btn btn-info float-right'
+```
+
+```rb
+# admin/bills/completions_controller.rb
+# destroyアクションのみ記載
+
+  def destroy
+    @bill = Bill.find(params[:bill_id])
+    binding.pry
+
+    if @bill.update(bill_params)
+      redirect_to admin_bills_path, notice: "#{@bill.name}さんの申請「#{@bill.item}（#{@bill.price}円）」を未精算に戻しました。"
+    end
+  end
+
+```
+
+うまく表示されるようになった。  
+
+<a href="https://gyazo.com/5fb5f121bd092e65da2d3ba46d7bf71d"><img src="https://i.gyazo.com/5fb5f121bd092e65da2d3ba46d7bf71d.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<a href="https://gyazo.com/21f192db79a4bfde4cfd4a32162ec4a2"><img src="https://i.gyazo.com/21f192db79a4bfde4cfd4a32162ec4a2.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<a href="https://gyazo.com/4c1ca61fb3753478e2ac1f19528011aa"><img src="https://i.gyazo.com/4c1ca61fb3753478e2ac1f19528011aa.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<a href="https://gyazo.com/c9745d23bc839ad1a68c9826426b3cc4"><img src="https://i.gyazo.com/c9745d23bc839ad1a68c9826426b3cc4.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+なお、写真を改めて眺めていると、余計な改行がされていた。  
+Bootstrapにて横並びにさせる。 
+
+```slim
+/ admin/bills/show.html.slim
+
+.d-flex
+  = link_to '編集', edit_admin_bill_path(@bill), class: 'btn btn-primary mr-3'
+  = link_to '削除', admin_bill_path(@bill), method: :delete, data: {confirm: "#{@bill.name}さんに代わって、#{@bill.item}（#{@bill.price}円）を削除しますが、よろしいですか？"}, class: 'btn btn-danger mr-3'
+  .ml-auto
+    -if @bill.status == true
+      = form_with model: @bill, url: admin_bill_completion_path(@bill), method: :delete, data: {confirm: "#{@bill.name}さんの申請「#{@bill.item}（#{@bill.price}円）」を未精算に戻しますが、よろしいですか？"}, local: true do |f|
+        = f.hidden_field :status, value: false
+        = f.hidden_field :completed_on, value: nil
+        = f.submit '未精算に戻す', class: 'btn btn-info'
+    -else 
+      = form_with model: @bill, url: admin_bill_completion_path(@bill), local: true do |f|
+        = f.hidden_field :status, value: true
+        = f.hidden_field :completed_on, value: Time.zone.today
+        = f.submit '返金したので精算済にする', class: 'btn btn-info'
+```
+
+[Flexユーティリティ～Bootstrap4移行ガイド](https://cccabinet.jpn.org/bootstrap4/utilities/flex#auto-margins)  
+
+<br><br>
+
+## Issue 4.7 一覧画面において未精算と精算済を分けて表示する  
+---
+
+現在、全てのデータが未精算及び精算済のカテゴリに重複するような形で表示されている。  
+そこで、分類されるように対応する。  
+
+ActiveRecordのクエリー用のメソッドを使い、絞り込みと順番の並び替えを行う。  
+なお、以下にはコントローラ部分のみしか記載しないが、インスタンス変数名を変更したので、
+ビューファイルにおいても変更を加えている。  
+
+```rb
+# bills_controller.rb
+# indexアクションのみ記載
+
+  def index
+    @bills_uncompleted = Bill.where(status: "false").order(paid_on: :asc)
+    @bills_completed = Bill.where(status: "true").order(completed_on: :asc)
+  end
+```
+
+```rb
+# admin/bills_controller.rb
+# indexアクションのみ記載
+
+  def index
+    @bills_uncompleted = Bill.where(status: "false").order(paid_on: :asc)
+    @bills_completed = Bill.where(status: "true").order(completed_on: :asc)
+  end
+```
+
+<a href="https://gyazo.com/1c4d84362331485fafee5ab37854ea25"><img src="https://i.gyazo.com/1c4d84362331485fafee5ab37854ea25.gif" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<br><br>
+
+## Issue 4.8 showやeditの画面に未精算か精算済か表示されるようにする  
+---
+
+今のところ、詳細や編集の画面に移動した場合、精算日の記入の有無を確認することで、  
+未精算か精算済か判断することができるが、それだと少し分かりづらいので、  
+タイトルのところに「申請の詳細（未精算）」というような形で表示されるようにする。  
+
+現場railsによると、ビューにはあまりロジックを寄せない方がよいとのことだったので、  
+勉強がてらにカスタムヘルパーを使い、そのロジックを用いてシンプルにビューに記載したい。  
+（これまで散々ロジックを書いておいて・・・というツッコミは受け付けない）  
+
+カスタムヘルパーの使い方は以下を参考にした。  
+[rails helper 基本 \- Qiita](https://qiita.com/yukiyoshimura/items/f0763e187008aca46fb4)  
+
+ざっくりとした理解として、PATHヘルパーのようなものだと解釈した。  
+試行錯誤して、以下のように書けることがわかった。  
+
+```rb
+# application_helper.rb
+
+module ApplicationHelper
+  def status_on_view(bill)
+    if bill.status == false
+      "未精算"
+    else
+      "精算済"
+    end
+  end
+end
+```
+
+あとは、全てのshowやeditのviewを以下のコードで書き換えていく。  
+
+```slim
+h1.mt-5.mb-5
+  = "申請の詳細（#{status_on_view(@bill)}）"
+```
+
+これで、自動的に未精算か精算済か判断してくれる。  
+
+<a href="https://gyazo.com/97c7cdc9a157ecb8516fe2513c4ca31b"><img src="https://i.gyazo.com/97c7cdc9a157ecb8516fe2513c4ca31b.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<a href="https://gyazo.com/4e07caef8042550cbe73169f5dc2e451"><img src="https://i.gyazo.com/4e07caef8042550cbe73169f5dc2e451.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+
+
+

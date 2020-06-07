@@ -3022,3 +3022,13 @@ PATCHやDELETEメソッドでアクセスしようとしてくる玄人に対し
 
 <a href="https://gyazo.com/c08f7dfbd05df14a362a3cad3e410e2b"><img src="https://i.gyazo.com/c08f7dfbd05df14a362a3cad3e410e2b.gif" alt="Image from Gyazo" width="800" border=1/></a>  
 
+<br>
+
+## 番外編 showに遷移するリンクが誤って選手名に貼付されているので修正する
+---
+
+番外編のとおり、作業した。
+具体的には、index.html.slimとadmin/index.html.slimを修正した。  
+
+なお、show.html.slimにメモ書きとして残していたコメントについては、  
+その作業を無事に終えることができていたので、削除した。  

@@ -2699,6 +2699,326 @@ h1.mt-5.mb-5
 
 <a href="https://gyazo.com/4e07caef8042550cbe73169f5dc2e451"><img src="https://i.gyazo.com/4e07caef8042550cbe73169f5dc2e451.png" alt="Image from Gyazo" width="600" border=1/></a>  
 
+<br><br>
+
+## Issue 5.1 ログイン画面の作成 + ログイン機能の実装 
+---
+
+まず、sessionコントローラを作成する。  
+
+```
+bin/rails g controller Sessions new create destroy
+```
+
+不要なviewファイルやspec関係のファイルを削除する。  
+また、自動生成されたルーティングも削除する。  
+
+さて、画面の作成に取り掛かる。  
+現場Railsで使っていたコードを流用し、アレンジを加える。  
+
+```slim
+/ sessions/new.html.slim
+/ 修正： form_withの遷移先とマージンぐらい。。。
+
+h1.mt-5.mb-5 管理者ログイン
+
+= form_with url: '/session', method: :post, local: true do |f|
+  .form-group
+    = f.label :email, 'メールアドレス'
+    = f.text_field :email, class: 'form-control', id: 'session_email'
+  .form-group
+    = f.label :password, 'パスワード'
+    = f.password_field :password, class: 'form-control', id: 'session_password'
+  = f.submit 'ログインする', class: 'btn btn-primary'
+```
+
+続いて、コントローラの実装に取り掛かる。  
+引き続き、現場railsで使ったコードを流用する。  
+
+```rb
+# sessions_controller.rb
+
+class SessionsController < ApplicationController
+  def new
+  end
+
+  def create
+    user = User.find_by(email: session_params[:email])
+
+    # session[:user_id]とあるが、このハッシュの中身が気になるので追加してみた
+    binding.pry
+    if user&.authenticate(session_params[:password])
+      session[:user_id] = user.id
+      redirect_to admin_bills_path, notice: '管理者画面にログインしました。'
+    else
+      render :new
+    end
+  end
+
+  def destroy
+  end
+
+  private
+  
+  def session_params
+    params.require(:session).permit(:email, :password)
+  end
+
+end
+```
+
+改めて、authenticateメソッド（及びhas_secure_password）について確認。  
+[RailsのBCryptの使い方を現役エンジニアが解説【初心者向け】 \| TechAcademyマガジン](https://techacademy.jp/magazine/19932)  
+
+調子に乗って、githubのhas_secure_passwordのRubyコードも見てみたが、  
+流石に初学者が読もうと沼にハマる感じがしたので、スルーすることにした。  
+
+[Githubの生コード: has\_secure\_password](https://gist.github.com/thirotan/013f0336025b1644facc)  
+[Ruby on Rails の has\_secure\_password のコードを読んでみる \- What is it, naokirin?](https://naokirin.hatenablog.com/entry/2019/03/29/032801)  
+
+また、このままだとログインできないので、rails console を使って、  
+管理者用のログインアカウントを作成する。  
+
+passwordを入れると、password_confirmationに自動変換される。  
+
+```
+[2] pry(main)> user = User.new(username: "admin", email:"admin@example.com", password: "pasuwado", admin: true)
+=> #<User:0x00007f8949132e80 id: nil, username: "admin", email: "admin@example.com", password_digest: [FILTERED], admin: true, created_at: nil, updated_at: nil>
+
+[3] pry(main)> user.save
+```
+
+よし、では早速試してみる。  
+
+<a href="https://gyazo.com/11f2815bb58406a20a1a29c5edfb3a58"><img src="https://i.gyazo.com/11f2815bb58406a20a1a29c5edfb3a58.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+<br>
+
+<a href="https://gyazo.com/bc07aa1dca8a16cb1d0aca461d2975ca"><img src="https://i.gyazo.com/bc07aa1dca8a16cb1d0aca461d2975ca.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+おお、エラーですね。  
+最近、自作アプリを作っているというよりも、クイズのノリでエラー解決しているような気持ちが強いのは、どうなんだろう。。。  
+
+そうした疑問は置いておき、アプリ開発を進めるためにも、解読をすることに。  
+param is missing or the value is empty: session とある。  
+
+この写真には掲載できていないが、エラー画面の下の方にparamの中身はきちんと表示されているので、  
+param is missing なのではなく、 the value is empty : sessionが原因だということが分かる。  
+
+sessionの中身が気になって、binding.pryを付けていたが、  
+sessionは、そもそもこっちが作るべきものだったのではないかという疑念が浮上してくる。  
+
+実は、sessions/new.html.slimのファイルのform_withのコードだが
+
+```  
+= form_with url: '/session', method: :post, local: true do |f|
+```
+
+以上のとおり記載したが、現場Railsでは以下のとおりとなっていた。  
+
+```
+= form_with scope: :session, local: true do |f|
+```
+
+ルーティング上、現場railsのままだと上手く遷移しないので変更したのだが、このscopeが重要だったのかもしれない。  
+
+また、binding.pryの位置をずらし、既に作成した現場railsのアプリのparamsの中身を確認してみた。  
+すると、明らかに中身が違うことが分かった。原因はここにある。  
+
+```
+現場railsのログイン時のparams
+
+[1] pry(#<SessionsController>)> params
+=> <ActionController::Parameters {"utf8"=>"✓", "authenticity_token"=>"MTtN7ONj6eBP/gHgGNs5z4tXu0RDHuTgke3JQOL3yrn5PEuDGITPml3oJuVs/vvtMB5wu/68rY+61eWQeKZYWw==", "session"=>{"email"=>"admin@example.com", "password"=>"password"}, "commit"=>"ログインする", "controller"=>"sessions", "action"=>"create"} permitted: false>
+```
+
+```
+作成中のアプリのログイン時のparams
+
+[3] pry(#<SessionsController>)> params
+=> <ActionController::Parameters {"authenticity_token"=>"YWrAZ6jhZfIoFdIP4hVhF5M5829+ogk9MCoUVVw7WrcHx3PcdhR+h0iRhWLdqbi6fWWt8Ofw2aooN4P7IjJLdg==", "email"=>"admin@example.com", "password"=>"pasuwado", "commit"=>"ログインする", "controller"=>"sessions", "action"=>"create"} permitted: false>
+```
+
+つまり、現在作成中のアプリだと、emailとpasswordが個別のハッシュで送られていたけど、  
+ここはsessionのハッシュとして、emailとpasswordのハッシュを入れ子で送らなければいけない、ということが分かった。  
+
+さて、原因解明能力は上がったが、解決能力はまた別である。  
+
+よく分からないが、安易に scope: :session を追加して試してみる。  
+
+```
+=> <ActionController::Parameters {"authenticity_token"=>"B5W45vgy6QKddL81u4sXVq4c+fzXnUBMB0a8fkSLfXVhOAtdJsfyd/3w6FiEN877QECnY07PkNsfWyvQOoJstA==", "session"=>{"email"=>"admin@example.com", "password"=>"pasuwado"}, "commit"=>"ログインする", "controller"=>"sessions", "action"=>"create"} permitted: false>
+```
+
+お、これは来た！  
+binding.pryを抜け出し、エラーが出ないか確認する。  
+
+<a href="https://gyazo.com/4e55ef1f092d267b4a75de7a0d67a0e4"><img src="https://i.gyazo.com/4e55ef1f092d267b4a75de7a0d67a0e4.png" alt="Image from Gyazo" width="600" border=1/></a>  
+
+大勝利！！！！  
+
+<br>
+
+## Issue 5.2 ログアウト機能を実装する  
+---
+
+以下のコードで実装できる。
+なお、reset_sessionというメソッドを使うことで、sessionがリセットされるらしい。  
+
+逆にいえば、ログアウトをしないと、sessionが盗まれてしまった場合、  
+その人になりすまして、ログインした状態でアクセスしてしまうことができてしまうようなアプリの仕様になるということか。  
+
+ここで、Web技術の基礎について学んだ知識と繋がってくる。  
 
 
+```rb
+# sessions_controller.rb
+# destroyアクションのみ
+
+  def destroy
+    reset_session
+    redirect_to root_path, notice: "ログアウトしました。"
+  end
+
+  private
+  
+  def session_params
+    params.require(:session).permit(:email, :password)
+  end
+
+end
+```
+
+<a href="https://gyazo.com/d2c68e1b66545602c848dfeb25ef3875"><img src="https://i.gyazo.com/d2c68e1b66545602c848dfeb25ef3875.gif" alt="Image from Gyazo" width="800" border=1/></a>  
+
+無事、実装できた。  
+
+<br>
+
+## Issue 5.3 管理機能を管理者ユーザーだけに利用させるようにする  
+---
+
+コールバック機能を使い、Admin::Billsコントローラにコードを追加する。  
+
+なお、将来的にユーザー登録機能を実装することを視野に入れると、  
+ログインユーザーを取得する処理は今後も使う可能性があるため、  
+ApplicationControllerに登録し、Viewでも使えるようヘルパーメソッドとしても登録する。  
+
+```rb
+# admin/bills_controller.rb
+class Admin::BillsController < ApplicationController
+  before_action :require_admin
+
+  〜 省略 〜
+
+  private
+
+  〜 省略 〜
+
+  def require_admin
+    redirect_to root_path unless current_user.admin?
+  end
+
+```
+
+```rb
+# application_controller.rb
+
+class ApplicationController < ActionController: :Base
+  # ヘルパーメソッドとして登録
+  helper_method :current_user
+
+  private
+
+  # current_userとしてapplilcation_controllerに登録
+  def current_user
+    if session[:user_id]
+      @current_user = User.find_by(session[:user_id])
+    # 単純にnilの値を返すだけだとエラーになってしまったので、Userクラスであるnilを返すことにした
+    # これでroot_pathにリダイレクトされるようになった
+    else  
+      @current_user = User.new
+    end
+  end
+
+end
+```
+
+以下のとおり、URLに直接アクセスしようとしても、@current_user に admin: true  
+であるデータが格納されていないので、ルートパスに戻されるよう設計できた。  
+
+<a href="https://gyazo.com/28fd01fba291ea6aab7fbd9515c40a23"><img src="https://i.gyazo.com/28fd01fba291ea6aab7fbd9515c40a23.gif" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<br>
+
+## Issue 5.4 精算済の場合、一般ユーザーからは編集や削除ができないようにする
+---
+
+単純な設計ミスの話だが、未精算の内は部員の誰もがアクセスできて、  
+違う部員であっても修正できるのは、精算が済んでいないので、支障はさほどない。  
+
+ただし、精算済になった後に修正されてしまうと、トラブルの元になるので、  
+一般ユーザーからは修正できないようにしたい。  
+
+（とはいえ、管理者は好き放題できるので、信頼関係が重要になるのは変わらないのだけれど）  
+
+まず、シンプルに画面上のボタンを削除することで対応したい。  
+
+```slim
+/ show.html.slim
+/ ボタンの箇所のみ抜粋
+/ ifのコードを追加
+
+- if @bill.status == false
+  = link_to '編集', edit_bill_path(@bill), class: 'btn btn-primary mr-3'
+  = link_to '削除', bill_path(@bill), method: :delete, data: {confirm: "#{@bill.item}（#{@bill.price}円）を削除しますが、よろしいですか？"}, class: 'btn btn-danger'
+```
+
+ただ、このままだと、アドレスバーにeditを加えただけで侵入されてしまう。  
+
+<a href="https://gyazo.com/15d460a740c77230c5afb219599ad9be"><img src="https://i.gyazo.com/15d460a740c77230c5afb219599ad9be.gif" alt="Image from Gyazo" width="800" border=1/></a>  
+
+<a href="https://gyazo.com/b1f19403d333745ac2fa503737ce2fcb"><img src="https://i.gyazo.com/b1f19403d333745ac2fa503737ce2fcb.gif" alt="Image from Gyazo" width="800" border=1/></a>  
+
+これだと、素人であっても記録を書き換えられてしまうかもしれないので、アクセスできないよう処理を実装したい。  
+
+```rb
+# bills_controller.rb
+# edit, update, destroyアクションのみ記載 
+
+  def edit
+    @bill = Bill.find(params[:id])
+    # 以下のコードを追加
+    redirect_to @bill if @bill.status == true
+  end
+
+  def update
+    @bill = Bill.find(params[:id])
+    # 以下のコードを追加
+    redirect_to @bill if @bill.status == true
+    
+    if @bill.update(bill_params)
+      redirect_to @bill, notice: "#{@bill.item}（#{@bill.price}円）について、更新しました。"
+    else
+      render :edit
+    end
+  end
+
+  def destroy
+    @bill = Bill.find(params[:id])
+    # 以下のコードを追加
+    redirect_to @bill if @bill.status == true
+    
+    if @bill.destroy
+      redirect_to root_path, notice: "#{@bill.item}（#{@bill.price}円）を削除しました。"
+    else
+      render :edit
+    end
+  end
+```
+
+これで、先ほどのようなアドレスバーにeditを加えたような侵入や、  
+PATCHやDELETEメソッドでアクセスしようとしてくる玄人に対しても対応できた。  
+
+<a href="https://gyazo.com/c08f7dfbd05df14a362a3cad3e410e2b"><img src="https://i.gyazo.com/c08f7dfbd05df14a362a3cad3e410e2b.gif" alt="Image from Gyazo" width="800" border=1/></a>  
 

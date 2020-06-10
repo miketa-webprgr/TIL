@@ -294,7 +294,6 @@ class Car {
 ```
 
 ### クラスの継承
-
 extendsを使うと、親クラスのプロパティやメソッドを継承できる。  
 
 ```js
@@ -311,13 +310,114 @@ bus.info ();
 
 ```js
 class Car{
-  driveDistance(gasoline, efficiency){
-    return gasoline * efficiency;
+  constructor(gasoline, efficiency){
+    this.gasoline = gasoline;
+    this.efficiency = efficiency;
   }
 }
 
-class Car extends EV{
+class EV extends Car{
+  getDriveDistance(){
+  return this.gasoline * this.efficiency;
+  }
 }
 
-const ev = new EV( );
-ev.driveDistance(20, 10);
+const ev = new EV(20,10);
+
+const driveDistance = ev.getDriveDistance();
+
+console.log(`走行距離は${driveDistance}kmです`) // 走行距離は200kmです 
+```
+
+また、引数の理解が怪しかったので、以下のように書けることをテストした。  
+
+```js
+class Car{
+  getDriveDistance(gasoline, efficiency){
+  return gasoline * efficiency;
+  }
+}
+
+class EV extends Car{
+}
+
+const ev = new EV( ); // ここで引数を記入しても、constructorがないので反映されない
+
+const driveDistance = ev.getDriveDistance(20,10);
+
+console.log(`走行距離は${driveDistance}kmです`)// 走行距離は200kmです
+```
+
+正解不正解はなく、クラスの性質を理解して、どちらに書くのが適切か判断することが重要。  
+なお、今回の場合、EV（電気自動車）特有のことを書いているわけではないので、  
+下の書き方の方が適切であるように思う。  
+
+### オーバーライド
+- 親クラスのメソッドを小クラスの同名メソッドで上書きすることができる。
+- 親クラスのコンストラクタを呼び出し、上書きすることができる。
+  - 下記のとおり、superを使う
+
+```js
+class Sample {
+  constructor(ex1, ex2) {
+    this.ex1 = ex1;
+    this.ex2 = ex2;
+  }
+}
+
+class Sample2 extends Sample {
+  constructor(ex1, ex2, ex3) {
+    super(ex1, ex2);// 親クラスの this.ex1 = ex1; this.ex2=ex2 を引っ張ってこれる
+    this.ex3 = ex3;
+  }
+```
+
+### import と export
+- プログラムをモジュールに分けて管理することができる
+- モジュールを関連付ける場合、エクスポートとインポートを組み合わせる
+  - 出力元のファイルにエクスポートと書き、出力先のファイルにインポートと書く
+  - クラス、関数、数値、文字列などをエクスポートできる
+  - 複数の関数などをエクスポートする場合、{}で囲む
+  - export defaultは、１つのファイルにつき１回しか使えない
+
+```js
+import add from "./export";
+
+const sum = add( 2 , 6 );
+console.log(sum); // 8
+```
+
+```js
+// export.jsファイル
+function add (a, b) {
+  return a + b;
+}
+export default add;
+```
+
+### メソッド全般
+
+### コールバック関数
+
+### pushメソッド
+
+### popメソッド
+
+### reduceメソッド
+
+### everyメソッド
+
+```js
+const numbers = [54, 42, 39, 13, 8];
+
+/* 定数「flag」に、15以上の数値を「false」が返るまで出力してください
+　 また、出力した数値が15以上かを「true/false」で表示してください */
+const flag = numbers.every(num => {
+    console.log(num, num >= 15);
+    return num > 15;
+}) ; 
+
+// 定数「flag」を出力してください
+console.log(flag);
+```
+

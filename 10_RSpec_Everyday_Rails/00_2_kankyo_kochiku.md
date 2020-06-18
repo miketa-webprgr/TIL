@@ -164,7 +164,7 @@ commit だけ一応しておいて、バージョン2.7.1で試してみる。
 
 ```
 # ruby 2.7.1 をダウンロードする
-rbenv install 2.4.9
+rbenv install 2.7.1
 
 # rubyのバージョンを 2.7.1 に指定する
 rbenv local 2.7.1
@@ -172,3 +172,328 @@ rbenv local 2.7.1
 # rubyのバージョンが 2.7.1 になっていることを確認する
 rbenv version
 ```
+
+改めて、`bundle install`を行う。  
+
+すると、gem install bundler 2.1.4を実行せよと指示が出るので、
+その指示に従った後、もう一度`bundle install`を行う。  
+
+警告が出るが、`i18n`, `Paperclip`, `Sass`など、
+これまで見たものと基本的に変わらない。
+
+RSpecでテストを実行する。 
+
+```
+Users/HOGE/.rbenv/gems/2.7.0/bundler/gems/shoulda-matchers-4b160bd19ecc/lib/shoulda/matchers/active_model/validate_inclusion_of_matcher.rb:273:in `<class:ValidateInclusionOfMatcher>': undefined method `new' for BigDecimal:Class (NoMethodError)
+```
+
+エラーとなってしまった。  
+
+動画上では警告が出るだけだったが、Rubyのバージョンを上げたためなのか、  
+私の方でそもそもRSpecのテストが出来なくなってしまった。  
+
+ただ、動画によると、このエラーはRailsのバージョンを上げれば解決するようなので、  
+Railsを5.2.3にアップデートしてみる。  
+
+なお、動画では`Gemfile`を開き、`shoulda-matchers`のブランチ指定を解除していたが、  
+そちらについては後ほど対応することとする。  
+
+Gemfileを開き、railsのバージョンを以下のとおり設定する。  
+
+```
+gem 'rails', '~> 5.2.3'
+```
+
+そして、`bundle update`を実行する。  
+終了した後、`rails app: update`を実行する。  
+
+routes.rbだけは`n`を押し、それ以外は`y`を押す。  
+
+ここで差分を確認しながら、自力で必要な設定を戻していく。  
+VSCodeを使っていると、以下のとおり確認できる。  
+
+<a href="https://gyazo.com/fc3575eb252d1b190d4cb7af9d5e2c45"><img src="https://i.gyazo.com/fc3575eb252d1b190d4cb7af9d5e2c45.png" alt="Image from Gyazo" width="800" border=1/></a>  
+
+設定は以下のとおり戻したので、参考までに記す。  
+動画のとおり、戻している。 
+
+```rb
+# config/application.rb
+
+module Projects
+  class Application < Rails::Application
+    # Initialize configuration defaults for originally generated Rails version.
+    config.load_defaults 5.1
+
+    # Settings in config/environments/* take precedence over those specified here.
+    # Application configuration can go into files in config/initializers
+    # -- all .rb files in that directory are automatically loaded after loading
+    # the framework and any gems in your application.
+
+    config.generators do |g|
+      g.test_framework :rspec,
+        view_specs: false,
+        helper_specs: false,
+        routing_specs: false
+    end
+  end
+end
+```
+
+```rb
+# config/environments/test.rb
+# 以下のコードを最後に追加する
+
+# Keep files uploaded in tests from polluting the Rails development
+# environment's file uploads
+Paperclip::Attachment.default_options[:path] = \
+  "#{Rails.root}/spec/test_uploads/:class/:id_partition/:style.:extension"
+```
+
+### railsdiff.orgを参考にして、新しく追加されたgem等を確認する
+
+以下のとおり説明があるので、対応する。  
+
+> app:updateコマンドを実行しても、Gemfileのようにまったく更新されないファイルもあります。
+> ですが、rails newした直後のGemfileを比較すると、デフォルトでインストールされるgemの種類やバージョンには違いがあります。
+> Railsのバージョンを上げたのであれば、こういった部分も新しいRailsに合わせておく方が安心です
+
+[railsdiff.org](http://railsdiff.org/5.1.7/5.2.3)  
+
+以上を開き、動画のとおり更新する。  
+
+更新した箇所は下記のとおり、3つのファイル。  
+
+```
+# .gitignore
+
+〜 上部は変更がないので省略 〜
+
+# ---- 以下に修正を加えた ------
+
+# Ignore uploaded files in development # これを追加
+/storage/* # これを追加
+!/storage/.keep # これを追加
+
+/node_modules
+/yarn-error.log
+ 
+/public/assets # これを追加
+.byebug_history
+
+# Ignore master key for decrypting credentials and more. # これを追加
+/config/master.key # これを追加
+
+# Ignore uploads from Paperclip
+/public/system
+/spec/test_uploads
+
+.ruby-version
+```
+
+```
+# Gemfile
+
+source 'https://rubygems.org'
+
+git_source(:github) { |repo| "https://github.com/#{repo}.git" } # ここを変更
+
+ruby '2.7.1' # ここを追加
+
+gem 'rails', '~> 5.2.3'
+gem 'sqlite3'
+gem 'puma', '~> 3.11' # ここを変更
+gem 'sass-rails', '~> 5.0'
+gem 'uglifier', '>= 1.3.0'
+gem 'coffee-rails', '~> 4.2'
+gem 'turbolinks', '~> 5'
+gem 'jbuilder', '~> 2.5'
+gem 'bootsnap', '>= 1.1.0', require: false # ここを追加
+
+〜 以下、変更がないので省略します 〜
+```
+
+```rb
+# app/views/layouts/application.html.erb
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Projects</title>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+  </head>
+
+# 以下は変更がないので、省略
+```
+
+さて、変更を終えたので、`bundle install`を実行する。  
+実行したところ、無事終了した。  
+
+### 動作確認を行う
+
+動画に従い、`rails c`を実行する。  
+すると、`rails c`は起動できたが、以下の警告メッセージが出てきた。  
+
+```
+/Users/HOGE/.rbenv/gems/2.7.0/gems/actionpack-5.2.4.3/lib/action_dispatch/middleware/stack.rb:37: warning: Using the last argument as keyword parameters is deprecated; maybe ** should be added to the call
+/Users/HOGE/.rbenv/gems/2.7.0/gems/actionpack-5.2.4.3/lib/action_dispatch/middleware/static.rb:111: warning: The called method `initialize' is defined here
+```
+
+なお、動画のとおり、`rails c`の挙動を確認したがエラーとなった。  
+
+```
+irb(main):001:0> User.count
+Traceback (most recent call last):
+        1: from (irb):1
+ActiveRecord::StatementInvalid (Could not find table 'users')
+```
+
+動画の中で見逃したのかもしれないが、マイグレーションが必要だったのだろうか。  
+`git`で`test`というブランチを作り、保険だけ掛けておく。  
+
+マイグレーションを行うと、無事`rails c`は動いた。  
+ただ、動画とは異なり、User.countをしても21という数は出てこない。  
+
+また、先ほど出てきた警告メッセージは、引き続き出てくる。  
+気になったので調べてみると、どうやらgemが対応できていないことにより挙動らしい。  
+
+[Ruby 2\.7\.0 \+ Rails 6\.0\.2\.1 で警告 warning: Using the last argument as keyword parameters is deprecated を一旦回避 \- Just do IT](https://k-koh.hatenablog.com/entry/2020/02/07/145957)  
+
+問題はなさそうなので、とりあえずスルーすることにする。  
+
+`rails s`にてサーバーが立ち上がるかも確認。  
+無事動き、機能も一通り試したところ問題がなさそうだった。  
+
+bin/rspecを実行する。  
+以下のエラーが出て、テストが実行できなかった。  
+
+```
+/Users/HOGE/.rbenv/gems/2.7.0/bundler/gems/shoulda-matchers-4b160bd19ecc/lib/shoulda/matchers/active_model/validate_inclusion_of_matcher.rb:273:in `<class:ValidateInclusionOfMatcher>': undefined method `new' for BigDecimal:Class (NoMethodError)
+```
+
+shoulda-matchersと書いてあるので、ここで放置してきた
+`shoulda-matchers`のブランチ指定を解除を盲目的に実行する。  
+
+`Gemfile`を開き、`gem 'shoulda-matchers'`以下に書いてある２行のブランチ指定のコードを削除する。  
+そして、`bundle install`を実行する。  
+
+すると、テストが実行でき、以下の失敗が起きた。  
+また、Rubyのバージョンが2.7.1に上がったことによると思われるが、大量の警告が出た。  
+
+```
+Failures:
+
+  1) Notes user uploads an attachment
+     Failure/Error: fill_in "Message", with: "My book cover"
+     
+     Capybara::ElementNotFound:
+       Unable to find field "Message" that is not disabled
+
+〜 省略 〜
+
+  2) Projects user creates a new project
+     Failure/Error: fill_in "Name", with: "Test Project"
+     
+     Capybara::ElementNotFound:
+       Unable to find field "Name" that is not disabled
+
+〜 省略 〜
+
+Finished in 46.59 seconds (files took 3.76 seconds to load)
+70 examples, 2 failures
+
+Failed examples:
+
+rspec ./spec/system/notes_spec.rb:11 # Notes user uploads an attachment
+rspec ./spec/system/projects_spec.rb:4 # Projects user creates a new project
+```
+
+なお、以下の警告はRubyが2.7.1にバージョンアップしたことに起因しないらしい。  
+動画内でも取り上げられていた。  
+
+```
+DEPRECATION WARNING: The success? predicate is deprecated and will be removed in Rails 6.0. Please use successful? as provided by Rack::Response::Helpers. (called from block (3 levels) in <main> at /Users/HOGE/Desktop/Github作業フォルダ/RSpecPractice/everydayrails-rspec-2017-master/spec/controllers/tasks_controller_spec.rb:40)
+
+# 他の箇所にもRSpec関係のファイルにて該当の警告があり
+```
+
+動画に従い、まず以下のFailuresから解決する。  
+
+```
+Failures:
+
+  1) Notes user uploads an attachment
+     Failure/Error: fill_in "Message", with: "My book cover"
+     
+     Capybara::ElementNotFound:
+       Unable to find field "Message" that is not disabled
+
+〜 省略 〜
+
+  2) Projects user creates a new project
+     Failure/Error: fill_in "Name", with: "Test Project"
+     
+     Capybara::ElementNotFound:
+       Unable to find field "Name" that is not disabled
+```
+
+これは、form_withに関わるエラーであり、HTMLが生成されるときにidが消えてしまうらしい。  
+
+> [config\.load\_defaultsとnew\_framework\_defaults\_x\_x\.rbの関係を詳しく調べてみた \- Qiita](https://qiita.com/jnchito/items/cce3b2795e1c66735310)  
+
+そこで、以下のファイルを修正する。  
+
+```rb
+# config/application.rb
+
+module Projects
+  class Application < Rails::Application
+    # Initialize configuration defaults for originally generated Rails version.
+
+    # 5.1から5.2に変更する
+    config.load_defaults 5.2
+
+    # Settings in config/environments/* take precedence over those specified here.
+    # Application configuration can go into files in config/initializers
+    # -- all .rb files in that directory are automatically loaded after loading
+    # the framework and any gems in your application.
+
+    config.generators do |g|
+      g.test_framework :rspec,
+        view_specs: false,
+        helper_specs: false,
+        routing_specs: false
+    end
+  end
+end
+```
+
+RSpecのテストを実行してみると、動画のとおり、全てのテストがパスした。  
+
+```
+Finished in 14.12 seconds (files took 1.05 seconds to load)
+70 examples, 0 failures
+```
+
+次に、警告を解決する。
+
+改めて英文の警告を確認すると、successをsuccessfulに書き換えろと指示があるので、  
+その指示に従う。すると、警告が消えるらしい。
+
+以下のファイルを開き、指示のとおり対応した。  
+- spec/controllers/home_controller_spec.rb
+- spec/controllers/projects_controller_spec.rb
+- spec/controllers/tasks_controller_spec.rb
+- spec/controllers/home_spec.rb
+
+RSpecのテストを実行してみると、警告が消えた。  
+（もちろん、Ruby2.7.1の導入に起因すると思われる大量の警告は残ったままであるが笑）
+
+これで、Rails5.2へのアップデートが終了した。  
+
+
+

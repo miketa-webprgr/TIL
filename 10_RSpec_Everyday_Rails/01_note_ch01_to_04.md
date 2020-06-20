@@ -54,12 +54,49 @@ create spec/rails_helper.rb # ヘルパーファイル
 <a href="https://gyazo.com/291b467e6fc433715641f51f81016512"><img src="https://i.gyazo.com/291b467e6fc433715641f51f81016512.png" alt="Image from Gyazo" width="600" border=1/></a>
 
 次に`rspec binstub`をインストールする。
+（アプリケーションの bin ディレクトリ内に rspec という名前の実行用ファイルが作成される。）
+
+```text:Gemfile
+group :development do
+  # 省略
+  gem 'spring-commands-rspec'
+end
+```
+
+以下を実行するとよい。
 これにより、アプリケーションの起動を早くする`Spring`の恩恵が受けられる。
-（アプリケーションの bin ディレクトリ内に rspec という名前の実行用ファイルが作成される。
+
+```
+bundle exec spring binstub rspec
+```
 
 ジェネレータも設定する。
 `rails generate`コマンドを使ってアプリケーションにコードを追加する際に、
 RSpec 用のスペックファイルも一緒に作ってもら得るようになる。
+
+```rb:config/application.rb
+module CookingPost
+  class Application < Rails::Application
+    # Initialize configuration defaults for originally generated Rails version.
+    config.load_defaults 5.2
+
+    # Settings in config/environments/* take precedence over those specified here.
+    # Application configuration can go into files in config/initializers
+    # -- all .rb files in that directory are automatically loaded after loading
+    # the framework and any gems in your application.
+    config.i18n.default_locale = :ja
+    config.i18n.load_path += Dir[Rails.root.join('config', 'locales', '**', '*.{rb,yml}').to_s]
+
+    # 以下に追加する
+    config.generators do |g| g.test_framework :rspec,
+      view_specs: false,
+      helper_specs: false,
+      routing_specs: false
+    end
+
+  end
+end
+```
 
 具体的には、`config/application.rb`を開き、
 `config.generators do |g|`で始まるコードを書く。  
@@ -71,6 +108,14 @@ RSpec 用のスペックファイルも一緒に作ってもら得るように�
 
 これをfalseにすれば、`rails generate`された際、
 該当ファイルの作成を省略してくれる。
+
+以下は、個人的なメモ。
+chromedriver-helperはwebdriversに移行したので、その警告などが出ることがある。
+
+```
+-  gem 'chromedriver-helper'
++  gem 'webdrivers', '~> 3.0'
+```
 
 以下の部分は、参考になったのでそのまま引用する。
 
@@ -84,11 +129,27 @@ RSpec 用のスペックファイルも一緒に作ってもら得るように�
 
 ## Chapter 03 モデルスペック
 
+### モデルスペックの作成
+
+```
+bin/rails g rspec:model モデル名
+```
+
 ### モデルスペックには次のようなテストを含める
 
 - 有効な属性で初期化された場合は、モデルの状態が有効(valid)になっていること
 - バリデーションを失敗させるデータであれば、モデルの状態が有効になっていないこと
 - クラスメソッドとインスタンスメソッドが期待通りに動作すること
+
+### モデルスペックで骨組みを作る
+
+以下のとおり、テストコード自体はまだ書かなくていいので、
+何のテストすべきか箇条書きにする。
+
+```rb
+# 姓、名、メール、パスワードがあれば有効な状態であること
+it "is valid with a first name, last name, email, and password"
+```
 
 ### 注意点
 
@@ -101,6 +162,16 @@ RSpec 用のスペックファイルも一緒に作ってもら得るように�
 - be_valid 、eq 、include 、be_empty
 - 詳細はここで紹介されている
   - [使えるRSpec入門・その2「使用頻度の高いマッチャを使いこなす」 \- Qiita](https://qiita.com/jnchito/items/2e79a1abe7cd8214caa5)
+
+### エラーメッセージについて
+
+モデルのバリデーションに抵触するか確認したい場合、  
+エラーメッセージがそもそもどうなっているか知る必要がある。  
+
+以下を参照するとよい。  
+
+- [rails\-i18n/ja\.yml at master · svenfuchs/rails\-i18n](https://github.com/svenfuchs/rails-i18n/blob/master/rails/locale/ja.yml)
+- アプリ内の`ja.yml`ファイル
 
 ### DRYに書く
 

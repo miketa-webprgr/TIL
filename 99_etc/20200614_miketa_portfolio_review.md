@@ -2,6 +2,7 @@
 
 ## レビュー対象
 
+みけた
 部費管理マネジャー
 https://buhimanager.herokuapp.com/
 

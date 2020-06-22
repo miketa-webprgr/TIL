@@ -60,11 +60,11 @@ CookingPost
     - [【Rails】独自ヘルパー\(Helper\)メソッドの使い方 \- Qiita](https://qiita.com/shibata0406/items/d59336d9f84cf91b3eb2)
     - [【Rails】Helperを使ってよりDRYなviewを書こう \- Qiita](https://qiita.com/shunsuke227ono/items/21f5968ca7ca0391b583)
 
-- `@curren_user ||= User.find_by(id: session[:user_id])`について
+- `@current_user ||= User.find_by(id: session[:user_id])`について
   - `||=`の意味
     - `@current_user`を代入する
     - `@current_user`がなければ、`User.find_by(id: session[:user_id])`を実行する
-  - `@curren_user ||= User.find_by(id: session[:user_id])`ではダメなのか
+  - `User.find_by(id: session[:user_id])`ではダメなのか
     - SQLコマンドが不要な時は使用しないため
     - SQLコマンドの使用を避けることで、パフォーマンスの向上が期待できる
   - FindとFind_byの使い分け
@@ -91,7 +91,7 @@ CookingPost
   config/initializers/assets.rb
 
   <%= stylesheet_link_tag 'admin', media: 'all' %>
-    <%= javascript_pack_tag 'admin' %>
+    <%= javascript_include_tag 'admin' %>
 ```
 
 ### モデル・データベース関係

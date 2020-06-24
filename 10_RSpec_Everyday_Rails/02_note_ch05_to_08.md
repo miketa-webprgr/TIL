@@ -1,4 +1,4 @@
-# EverydayRails RSpecによるRailsテスト入門
+ # EverydayRails RSpecによるRailsテスト入門
 
 ## Chapter 05 コントローラスペック
 
@@ -221,15 +221,7 @@ success と http status は両方チェックしないといけませんか?必�
 ## Chapter 06 フィーチャスペックで UI をテストする
 
 統合テスト（Feature Specs → System Specs）
-
 - モデルとコントローラが他のモデルのコントローラとうまく一緒に動作することを確認する
-
-• まず最初に、フィーチャスペックをいつ、そしてなぜ書くのかを他の選択肢と比較しながら考えて みます。
-• 次に、統合テストで必要になる追加ライブラリについて説明します。
-• それからフィーチャスペックの基礎を見ていきます。
-• そのあと、もう少し高度なアプローチ、すなわち JavaScript が必要になる場合のテストに取り組み
-ます。
-• 最後に、フィーチャスペックのベストプラクティスを少し考えて本章を締めくくります。
 
 ### Capybaraの設定方法
 
@@ -371,3 +363,198 @@ scenario "runs a really slow process" do
   end
 end
 ```
+
+## Chapter 07 リクエストスペックで API をテストする
+
+### そもそもAPIとは
+
+APIを触ったことがなく、amazonやらyoutubeやらとうまく連携して、  
+いい感じにアプリを作ることができるサービスという認識しかなかった。  
+
+なので、まずRSpecの勉強をする前に、APIについての理解を深めることとした。  
+
+[WebAPIについての説明 \- Qiita](https://qiita.com/busyoumono99/items/9b5ffd35dd521bafce47)  
+[Web APIとは？ （LINE bot API・グルナビAPI） \- Qiita](https://qiita.com/Masato338/items/6fb1ac277c965905e019)  
+
+また、`JSON.parse`というものが出てきたので、調べてみた。  
+
+[JSON\.parse\(\) \- JavaScript \| MDN](https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse)  
+
+あくまでイメージでの世界でしかないが、WebAPIを使うと、paramsをyoutubeなどのWebサーバーに送ることで、  
+youtube側がJSON形式でデータを返してくれるので、それを活用して、いい感じにサービスを構築できるという  
+ことが分かった。  
+
+そして、このサンプルプロジェクトでは、APIサーバーも作られており、  
+JSON形式でデータを返してくれるということがよく分かった。
+（違う形もあるのだろうけど、こういうタイプのものは多いらしい）。
+
+その辺りの制御は、`controllers/api/projects/controller.rb`にて  
+行われていることも、大枠が分かっていく中で、自然と理解できた。  
+
+これは、`http://puzzles-engineer.github.io/`の第１問ができないと、
+流石に厳しいのではないかと感じた。  
+
+### GET リクエストをテストする
+
+APIのコントローラは、以下のとおりとなっている。  
+テストはindex部分について書かれているので、index部分に限定して引用する。  
+
+```rb: controllers/api/projects_controller.rb
+module Api
+  class ProjectsController < ApplicationController
+
+    prepend_before_action :authenticate_user_from_token!
+
+    def index
+      @projects = current_user.projects
+      render json: @projects
+    end
+
+    private
+
+    def authenticate_user_from_token!
+      user_email = params[:user_email].presence
+      user = user_email && User.find_by(email: user_email)
+      if user && Devise.secure_compare(user.authentication_token, params[:user_token])
+        sign_in user, store: true
+      else
+        render json: { status: "auth failed" }
+        false
+      end
+    end
+
+  end
+end
+```
+
+```rb: projects_api_spec.rb
+describe 'Projects API', type: :request do
+  it 'loads a project' do
+    user = FactoryBot.create(:user)
+    FactoryBot.create(:project, name: "Sample Project")
+    FactoryBot.create(:project, name: "Second Sample Project", owner: user)
+
+    # このAPIではユーザーのメールアドレスとサインインするためのトークンが必要になる
+    # api_projects_path(indexアクション）にアクセスし、GETメソッドにてparamsを送る
+    get api_projects_path, params: {
+      user_email: user.email,
+      user_token: user.authentication_token
+    }
+
+    expect(response).to have_http_status(:success)
+
+    # jsonに格納されるデータは以下のとおり
+    # [{"id"=>2, "name"=>"Second Sample Project", "description"=>"A test project.", "due_on"=>"2020-07-01", "created_at"=>"2020-06-24T07:26:53.964Z", "updated_at"=>"2020-06-24T07:26:53.964Z", "user_id"=>1, "completed"=>nil}]
+    json = JSON.parse(response.body)
+
+    expect(json.length).to eq 1
+    project_id = json[0]["id"]
+
+    get api_project_path(project_id), params: {
+      user_email: user.email,
+      user_token: user.authentication_token
+    }
+
+    expect(response).to have_http_status(:success)
+    json = JSON.parse(response.body)
+    expect(json["name"]).to eq "Second Sample Project"
+  end
+end
+```
+
+### POST リクエストをテストする
+
+以下のとおりとなる。  
+GETと考え方は変わらない。create部分に限定して引用する。  
+
+```rb: controllers/api/projects_controller.rb
+module Api
+  class ProjectsController < ApplicationController
+
+    prepend_before_action :authenticate_user_from_token!
+
+    def create
+      @project = current_user.projects.new(project_params)
+
+      if @project.save
+        render json: { status: :created }
+      else
+        render json: @project.errors, status: :unprocessable_entity
+      end
+    end
+
+    private
+
+    def authenticate_user_from_token!
+      user_email = params[:user_email].presence
+      user = user_email && User.find_by(email: user_email)
+      if user && Devise.secure_compare(user.authentication_token, params[:user_token])
+        sign_in user, store: true
+      else
+        render json: { status: "auth failed" }
+        false
+      end
+    end
+
+    def project_params
+      params.require(:project).permit(:name, :description, :due_on)
+    end
+  end
+end
+```
+
+```rb: spec/requests/projects_api_spec.rb
+require 'rails_helper'
+  describe 'Projects API', type: :request do
+  # 最初のサンプルコードは省略 ...
+  # プロジェクトを作成できること
+  it 'creates a project' do
+    user = FactoryBot.create(:user)
+    project_attributes = FactoryBot.attributes_for(:project)
+    expect {
+      post api_projects_path, params: {
+        user_email: user.email,
+        user_token: user.authentication_token,
+        project: project_attributes
+      }
+    }.to change(user.projects, :count).by(1)
+
+    expect(response).to have_http_status(:success)
+  end
+end
+```
+
+### コントローラスペックをリクエストスペックで置き換える
+
+ここまでのテストは、あくまでAPI部分に関係するテストだったが、
+コントローラ部分も含めて、総合的にテストすることができる。  
+
+以下の例では、`sign_in @user`が出てくるが、ログイン機能が動くか、  
+総合的にテストすることができる。  
+
+```rb: spec/requests/projects_spec.rb
+require 'rails_helper'
+
+RSpec.describe "Projects", type: :request do 
+  # 認証済みのユーザーとして
+  context "as an authenticated user" do
+    before do
+      @user = FactoryBot.create(:user)
+    end
+
+  # 有効な属性値の場合
+  context "with valid attributes" do
+    # プロジェクトを追加できること
+    it "adds a project" do
+      project_params = FactoryBot.attributes_for(:project)
+      sign_in @user
+      expect {
+        post projects_path, params: { project: project_params }
+      }.to change(@user.projects, :count).by(1)
+    end
+  end
+end
+```
+
+なお、細かい設定方法が書いてあったが、解読するまでには至りそうもなかったので、  
+とりあえずは、きちんと設定ができるように頑張りたい。

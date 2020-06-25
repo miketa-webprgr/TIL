@@ -558,3 +558,130 @@ end
 
 なお、細かい設定方法が書いてあったが、解読するまでには至りそうもなかったので、  
 とりあえずは、きちんと設定ができるように頑張りたい。
+
+## Chapter 08 スペックをDRYに保つ
+
+### サポートモジュール
+
+共通する処理については、モジュール化することができる。  
+以下のとおり、新しくファイルを作成し、モジュールとして定義する。
+
+```rb: spec/support/login_support.rb
+module LoginSupport
+  def sign_in_as(user)
+    visit root_path
+    click_link "Sign in"
+    fill_in "Email", with: user.email
+    fill_in "Password", with: user.password
+    click_button "Log in"
+  end
+end
+
+RSpec.configure do |config|
+  config.include LoginSupport
+end
+```
+
+なお、以上においては、モジュールを RSpec に include するよう定義したが、  
+テスト毎に明示的にサポートモジュールを include する方法もある。  
+
+include すれば、sign_in_as メソッドを使用することができる。  
+
+```rb: spec/features/projects_spec.rb
+require 'rails_helper'
+
+RSpec.feature "Projects", type: :feature do
+  # この処理によりincludeできる
+  include LoginSupport
+
+  # ユーザーは新しいプロジェクトを作成する 
+  scenario "user creates a new project" do
+    # ...
+  end
+end
+```
+
+なお、Deviseの場合、以下のとおりヘルパーに記載する。  
+
+```rb: spec/helper.rb
+RSpec.configure do |config| 
+  # 他の設定は省略 ...
+
+  # Devise のヘルパーメソッドをテスト内で使用する
+  config.include Devise::Test::ControllerHelpers, type: :controller 
+  config.include RequestSpecHelper, type: :request
+  # 今回はSystemSpecの部分なので、以下を追加する
+  config.include Devise::Test::IntegrationHelpers, type: :feature
+end
+```
+
+### letで遅延読み込みをする
+
+beforeブロックを使って、共通のインスタンス変数をセットアップするのではなく、  
+letを使って遅延読み込みをするとよい。  
+
+Beforeの場合・・・テストを実行する度に毎回実行される
+Letの場合・・・呼ばれた時に初めてデータを呼び込む（let!は遅延読み込みされない）
+
+let を使うと複数のテストで必要な共通のテストデータを簡単にセットアップすることができる。  
+
+letは、呼ばれた場合、contextごとにデータを作成してくれる。  
+
+```rb
+let(:user_a){ FactoryBot.create(:user, name: "ronaldo", email: "ronaldo@test.com") }
+let(:user_b){ FactoryBot.create(:user, name: "dybala", email: "pablo@test.com") }
+let!(:cook_a){ FactoryBot.create(:cook, name: '最初の料理', user: user_a) }
+let!(:cook_b){ FactoryBot.create(:cook, name: '次の料理', user: user_a) }
+```
+
+### shared_context（contextの共有）
+
+shared_context を使うと複数のテストファイルで必要なセットアップを行うことができる。  
+なお、使用にあたっては、`rails_helper.rb`で以下の設定を有効にする必要がある。  
+
+```rb: rails_helper.rb
+Dir[Rails.root.join('spec', 'support', '**', '*.rb')].each { |f| require f }
+```
+
+設定した後、以下のとおりコードを書く。
+
+```rb: spec/controllers/tasks_controller_spec.rb
+RSpec.describe TasksController, type: :controller do
+  include_context "project setup"
+
+  〜 省略 〜
+
+end
+```
+
+`project setup`については別ファイルで定義し、そのファイルを呼ぶ。  
+
+```rb: spec/support/contexts/project_setup.rb
+RSpec.shared_context "project setup" do
+  let(:user) { FactoryBot.create(:user) }
+  let(:project) { FactoryBot.create(:project, owner: user) } 
+  let(:task) { project.tasks.create!(name: "Test task") }
+end
+```
+
+### カスタムマッチャ
+
+スキップ
+
+### aggregate_failures (失敗の集約)
+
+単体テストにおいては、一般的に`it`ごとに`expect`は１つとした方が良い。  
+ただし、System Spec や Request Spec においては、`expect`を機能の統合を確認するため、複数書いても良い。  
+
+ただ、仕様上、テストに失敗した時点で`it`内のテストは終わってしまうため、  
+そのような事態を避けたい場合、aggregate_failuresを使うとよい。  
+
+```rb
+spec/controllers/projects_controller_spec.rb
+  # 正常にレスポンスを返すこと 
+  it "responds successfully" do
+    # sign_in @user
+    get :index
+    expect(response).to be_success expect(response).to have_http_status "200"
+end
+ 

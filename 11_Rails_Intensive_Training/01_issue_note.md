@@ -4,44 +4,32 @@
 
 1. ログイン機能を実装してください。
 2. その他初期設定を行ってください
-3. generateコマンド時に生成されるファイルを制限する
-4. ルーティング、JS、CSS、テストが自動生成されないようにする
-5. タイムゾーンの設定
-6. etc
+    - generateコマンド時に生成されるファイルを制限する
+    - ルーティング、JS、CSS、テストが自動生成されないようにする
+    - タイムゾーンの設定
+    - gemの導入
 
 ## 分からない単語・概念等について
 
 ### git flowとは
 
-git flowで出てくるブランチについて、ざっと確認。  
-だいそんさんのノートを読むまで、developブランチの意義が理解出来ずにいた。  
-特に、図が分かりやすくてありがたかった。  
+以下にまとめた。  
 
-#### 開発者視点でまとめていく  
+> [Gitflowとは](01_issue_note_gitflow.md)
 
-#### 平常時
+最初は難しく感じたが、開発者視点で順を追っていくと理解できた。  
+ざっと書いておくと、こんな感じ。  
 
-1. developブランチからfeatureブランチを作成する
-2. featureブランチで機能実装などを行う
-3. プルリクを送り、レビューを受ける
-4. レビューでOKが出たら、developブランチにマージする
-5. featureブランチは捨てる
-6. developブランチがデプロイできるぐらいの作業量になったら、releaseブランチを作成する
-7. releaseブランチにて、デプロイして問題がないか確認する
-8. バグが見つかれば、developにマージしておく
-9. 問題がなければ、masterにマージ！！！
+- 基本的には、featureとdevelopを行き来する  
+- 本番環境用のデプロイをする場合、developからreleaseブランチを切る  
+- バグチェックを行い、releaseからmasterにマージ！!!
 
-#### 緊急時
+### generateコマンド時に生成されるファイルを制限
 
-1. masterブランチからhotfixブランチを作成
-2. 急いでバグを修正！！！
-3. masterにマージ！！！！！
+`application.rb`にて行う。  
+以下にまとめました。  
 
-#### 参考資料
-
-- [git flowについて · DaichiSaito/insta\_clone Wiki](https://github.com/DaichiSaito/insta_clone/wiki/git-flow%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6)
-- [Git\-flowって何？ \- Qiita](https://qiita.com/KosukeSone/items/514dd24828b485c69a05)
-- [いまさらだけどGitを基本から分かりやすくまとめてみた \- Qiita](https://qiita.com/gold-kou/items/7f6a3b46e2781b0dd4a0)
+> [application.rbとは](01_issue_note_applicaton_rb.md)
 
 ### turbolinks
 
@@ -129,6 +117,9 @@ hamlの方がむしろ使用している人は多いらしい。
 
 [【Rails入門】Redisでセッションを高速化しよう！キャッシュも解説 \| 侍エンジニア塾ブログ（Samurai Blog） \- プログラミング入門者向けサイト](https://www.sejuku.net/blog/58218)  
 
+
+[Redisとは？RailsにRedisを導入 \- Qiita](https://qiita.com/hirotakasasaki/items/9819a4e6e1f33f99213c)  
+
 ### sourceryとは
 
 以下のQiita記事でイメージを把握した。  
@@ -169,11 +160,58 @@ Rubyのコードを綺麗に整えてくれる、警告してくれるgem。
 ### MySQL
 
 PostgreSQLと同じRDBMS。  
-PostgreSQLよりメジャー。  
+PostgreSQLよりメジャー。
+
+設定方法について、需要がありそうな感じがあったので気合を入れて書いた。
+若干時間を浪費してしまった感じがある。。。
+
+[【MacOS \- Homebrew版】MySQLの設定方法（英語を翻訳してみた） \- Qiita](https://qiita.com/miketa_webprgr/items/ba7210ac57e2086fc5b6)  
+
+なお、Railsへの導入については、以下の記事が分かりやすかった。  
+
+[railsのDBをmysqlに変更する。 \- Qiita](https://qiita.com/pchatsu/items/a7f53da2e57ae4aca065)  
+
+bundle install出来なかったが、以下が参考になった。  
+
+[【Rails】MySQL2がbundle installできない時の対応方法 \- Qiita](https://qiita.com/fukuda_fu/items/463a39406ce713396403)  
+
+For compilers to find openssl@1.1 you may need to set:
+  export LDFLAGS="-L/usr/local/opt/openssl@1.1/lib"
+  export CPPFLAGS="-I/usr/local/opt/openssl@1.1/include"
+
+順番も重要らしい
+bundle config --local build.mysql2 "--with-cppflags=-I/usr/local/opt/openssl@1.1/include"
+bundle config --local build.mysql2 "--with-ldflags=-L/usr/local/opt/openssl@1.1/lib"
+
+[RailsプロジェクトでMySQLがbundle installできなかった \- Qiita](https://qiita.com/akito19/items/e1dc54f907987e688cc0)  
+
+> Appleは、OpenSSLの使用を非推奨にしており、独自のTLSおよび暗号化ライブラリを支持しています
+> Apple has deprecated use of OpenSSL in favor of its own TLS and crypto libraries
+>
+> 通常、Appleのこの仕様による影響はありません。ただし、独自のソフトウェアが以下の式を必要とする場合、以下を追加する必要があります。
+> Generally there are no consequences of this for you. If you build your own software and it requires this formula, you'll need to add to your build variables:
+>
+> LDFLAGS: -L/usr/local/opt/openssl/lib
+> CPPFLAGS: -I/usr/local/opt/openssl/include
+> PKG_CONFIG_PATH: /usr/local/opt/openssl/lib/pkgconfig
+
+とりあえず、Appleが悪いってことでおk？笑
+
+`rails new`する時は、以下のコマンドを入力。  
+
+```text
+bundle exec rails new instagram_clone -d mysql --skip-turbolinks --skip-test
+```
+
+```
+bundle exec rake db:create
+```
 
 ### i18n
 
 ### database.yml
+
+- でーたべ
 
 ### migrationファイル
 
@@ -181,9 +219,20 @@ PostgreSQLよりメジャー。
 
 ### config/application.rbとは
 
+RUNTEQのryotaさんに助けられました。
+
+- [【Rails】rails generate controllerで生成されるファイルに制限をかける【config\.generatorsの設定】 \- Qiita](https://qiita.com/ryota21/items/643737b54f331b0aaa72)
+
 ### yarnとは
 
 - bootstrap material designを導入（gemだとうまく動かないのでyarnで導入）
+
+実際の作業においては、こちらが参考になった。
+まさかの臺さんにお世話になりました 笑
+
+[Cloud9上でYarnを使ってbootstrap material designを導入する \- Qiita](https://qiita.com/kenkentarou/items/e2ee6062fbff5d69fffd)  
+[yarnの使いかた \- Qiita](https://qiita.com/senou/items/d939601e32c0005ebfe3)  
+
 
 ### デバッグツールについて
 
@@ -191,4 +240,17 @@ PostgreSQLよりメジャー。
 - binding_of_callerを導入してエラー画面を使いやすくする
 - pry-byebugを導入してデバッグ可能な状態にする
 - pry-railsを導入してデバッグ可能な状態にする
-git flow feature start
+
+
+### その他初期設定を行う
+
+- generateコマンド時に生成されるファイルを制限する
+  - ルーティング、JS、CSS、テストが自動生成されないようにする
+
+調べたら、RUNTEQの人に助けられた 笑
+よくまとまっていた。
+
+[【Rails】rails generate controllerで生成されるファイルに制限をかける【config\.generatorsの設定】 \- Qiita](https://qiita.com/ryota21/items/643737b54f331b0aaa72)
+
+- タイムゾーンの設定
+

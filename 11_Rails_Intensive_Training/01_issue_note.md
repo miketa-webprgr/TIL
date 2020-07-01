@@ -106,6 +106,10 @@ hamlの方がむしろ使用している人は多いらしい。
 
 > [hamlとslimの両方を使ってみた感想 \- 営業職の俺がエンジニアになる〜群馬Web化計画編〜](https://toyokappa.hatenablog.com/entry/2017/09/10/231346)
 
+また、
+
+> [config\.generators\.template\_engine = :slim \#slimに変更](https://qiita.com/ngron/items/c03e68642c2ab77e7283)
+
 ### redisとは
 
 Key Value Store という方式でデータを保存している。  
@@ -150,7 +154,17 @@ Rubyのコードを綺麗に整えてくれる、警告してくれるgem。
 > ここのコードは長すぎるね。とか、インデント入れたほうがいいよ。とかメソッド名変えようか。  
 > とかをコマンド１つでターミナルに吐き出しててくれます。  
 
-[RuboCop is 何？ \- Qiita](https://qiita.com/tomohiii/items/1a17018b5a48b8284a8b)  
+使い方については、以下のとおり。  
+Qiita記事の抜粋。
+
+1. rubocop --auto-gen-configを実行し、.rubocop_todo.ymlを作成
+2. .rubocop_todo.yml内の警告の中から一番上の警告をコメントアウトする。
+3. rubocop を実行して警告を修正する。
+4. よく分からない時は、とりあえず、rubocop --auto-correctして、差分を確認する。
+5. 修正し終わったら.rubocop_todo.ymlに戻り、コメントアウトした警告を削除する。
+
+> [RuboCop is 何？ \- Qiita](https://qiita.com/tomohiii/items/1a17018b5a48b8284a8b)  
+> [rubocop \-\-auto\-gen\-config](https://qiita.com/tomohiii/items/1a17018b5a48b8284a8b)
 
 ### annotate
 
@@ -168,6 +182,8 @@ Rubyのコードを綺麗に整えてくれる、警告してくれるgem。
 PostgreSQLと同じRDBMS。  
 PostgreSQLよりメジャー。
 
+#### 設定方法
+
 設定方法について、需要がありそうな感じがあったので気合を入れて書いた。
 
 > [【MacOS \- Homebrew版】MySQLの設定方法（英語を翻訳してみた） \- Qiita](https://qiita.com/miketa_webprgr/items/ba7210ac57e2086fc5b6)  
@@ -175,6 +191,20 @@ PostgreSQLよりメジャー。
 なお、Railsへの導入については、以下の記事が分かりやすかった。  
 
 > [railsのDBをmysqlに変更する。 \- Qiita](https://qiita.com/pchatsu/items/a7f53da2e57ae4aca065)  
+
+また、環境変数を使いたかったので、調べてみた。  
+`dotenv`を使うという記事がたくさん出てきたが、ここはデフォルトの`credentials.yml`に挑戦することにした。  
+
+EditorはVSCodeがよかったので、以下のコマンドを入力！
+
+```text
+EDITOR='code --wait' rails credentials:edit
+```
+
+> [Railsで使える環境変数を管理できるgem\(dotenv\-rails\)や\.envの導入方法 \- Qiita](https://qiita.com/ryosuketter/items/ceb592dc6b23a20e51b5)  
+> [rails5\.2 credentials\.yml\.encでDB情報を管理 \- Qiita](https://qiita.com/potto/items/df7749682cb84a04e402)  
+
+#### bundle installの方法
 
 bundle install出来なかったが、以下が参考になった。  
 
@@ -212,7 +242,11 @@ bundle config --local build.mysql2 "--with-ldflags=-L/usr/local/opt/openssl@1.1/
 >
 > [RailsプロジェクトでMySQLがbundle installできなかった \- Qiita](https://qiita.com/akito19/items/e1dc54f907987e688cc0)  
 
-`rails new`する時は、以下のコマンドを入力。  
+#### rails new するときのコマンド
+
+なお、`rails new`する時は、以下のコマンドを入力。  
+なお、これによりMySQLへの接続設定、ターボリンクスの無効化、ミニテストファイルの生成停止  
+をやってくれる。  
 
 ```text
 bundle exec rails new -d mysql --skip-turbolinks --skip-test
@@ -260,15 +294,60 @@ DBのテーブルに変更を加える場合には、マイグレーションフ
 
 > [application.rbとは](01_issue_note_applicaton_rb.md)
 
-### yarnとは
+### yarnとは(Bootstrap Material Designについて)
 
 - bootstrap material designを導入（gemだとうまく動かないのでyarnで導入）
 - gem 'font-awesome-sass' が必要
+
+設定には、アセットパイプラインの知識が必要になる。  
+現場RailsのP266を参照するとよい。  
+
+考え方としては、以下のとおり。  
+
+WebpackerがRails6から導入されたこともあってか、  
+出てくる情報をそのまま適用できないのが辛いところ。  
+
+おそらく、BMDは以下と依存関係にある。  
+
+- font-awesome
+- jquery3
+- popper
+
+#### application.html.slimにて、`application.css`と`.js`を読み込む
+
+おそらく自動的にrails newの際に自動的に記述される。  
+コードは、以下のとおり。該当部分の抜粋。  
+
+```slim: application.html.slim
+# application.html.slim
+  = stylesheet_link_tag    'application', media: 'all'
+  = javascript_include_tag 'application'
+```
+
+#### application.scssファイルにて、`@import`形式にて必要なcssを指定する
+
+```scss: application.scss
+/* application.scs */
+@import 'bootstrap-material-design/dist/css/bootstrap-material-design';
+```
+
+#### application.jsファイルにて、`//= require`形式読み込むJSファイルを指定する
+
+```js: application.js
+// application.js
+
+//= require jquery3
+//= require popper
+
+//= require bootstrap-material-design/dist/js/bootstrap-material-design.js
+```
 
 実際の作業においては、こちらが参考になった。
 まさかの臺さんにお世話になりました 笑
 
 [Cloud9上でYarnを使ってbootstrap material designを導入する \- Qiita](https://qiita.com/kenkentarou/items/e2ee6062fbff5d69fffd)  
+[\[Rails6\.0\] Rails6 \+ yarn \+ webpacker でMaterial Design for Bootstrapを導入する \- Qiita](https://qiita.com/sasakura_870/items/38e17d95d9497cf81413)  
+[【Rails】font\-awesome\-sassの使い方を徹底解説！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/font_awesome_sass)  
 [yarnの使いかた \- Qiita](https://qiita.com/senou/items/d939601e32c0005ebfe3)  
 
 ### デバッグツールについて
@@ -290,3 +369,4 @@ DBのテーブルに変更を加える場合には、マイグレーションフ
 
 > It is critical you put better_errors only in the development section of your Gemfile.  
 > Do NOT run better_errors in production, or on Internet-facing hosts.  
+

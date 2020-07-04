@@ -107,7 +107,7 @@ end
 `header`部分については、ログインしている場合とそうでない場合で読み込む`header`を分けている。  
 その下にflashメッセージを読み込み、下に`yield`が来る構成となっている。  
 
-<img src="application_html.drawio.svg" width=300 border="1">
+<img src="01_application_html.drawio.svg" width=300 border="1">
 
 ## 動作確認方法
 

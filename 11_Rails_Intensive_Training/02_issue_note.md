@@ -75,13 +75,96 @@ GitHubのReadmeを読むと、異常なほどのダミーが作れることに�
 <!-- Swiper END -->
 ```
 
+また、設定方法については以下を参照した。  
+
+> - [公式サイト：Getting Started With Swiper](https://swiperjs.com/get-started/)  
+> - [swiperをyarnで導入して、画像をスライダー形式にする！ \- Qiita](https://qiita.com/kenkentarou/items/bdf04d8ecab6a855e50f)  
+
 ## fontawesome
 
-まだ調べられていない。  
+以下の記事が簡潔にまとめている。
+
+> [RailsでFontAwesomeの導入〜大きさを変えるまで \- Qiita](https://qiita.com/OneRoomBoy-TK/items/b837f438a49e70b29991)  
+
+例えば、以下のフォントを使いたい場合、  
+`far`,`fa-futbol`というクラスを指定してあげればよい。  
+
+[Futbol Icon \- Regular \| Font Awesome](https://fontawesome.com/icons/futbol?style=regular)  
 
 ## 投稿のCRUD機能実装
 
 これからコントローラとモデル関係の実装を追っていく。  
+
+### ルーティング
+
+ベタにresourceを使って、7つのアクションを設定する。  
+
+### モデル
+
+画像投稿用のPostというモデルを作成する。  
+
+投稿にあたっては、画像とメッセージの投稿はマストとしている。  
+また、メッセージの長さは1,000文字以下となっている。  
+
+```rb: Post.rb
+# == Schema Information
+#
+# Table name: posts
+#
+#  id         :bigint           not null, primary key
+#  body       :text(65535)      not null
+#  images     :string(255)      not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  user_id    :bigint
+#
+# Indexes
+#
+#  index_posts_on_user_id  (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)r
+
+class Post < ApplicationRecord
+  # userモデルに紐づける
+  belongs_to :user
+  
+  # アップローダと連携する為に必要
+  # 複数の画像が投稿できるよう、mount_uploader's'とする
+  mount_uploaders :images, PostImageUploader
+  
+  # JSON形式で保存する為に必要
+  # Rails5以上の場合、不要との情報もあったが。。。
+  serialize :images, JSON
+
+  validates :images, presence: true
+  validates :body, presence: true, length: { maximum: 1000 }
+end
+```
+
+### コントローラ
+
+7つのアクションについて、よくあるような設定を行う。
+- index
+  - 投稿データの一覧を表示（作成日順）
+- create
+  - current_userに紐づく形でデータを保存
+  - 成功した場合と失敗した場合で分岐させる
+- new
+  - 空のpostインスタンスを生成
+- edit
+  - current_userに紐づく形で該当データを表示
+- show
+  - 該当データを表示
+- update
+  - current_userに紐づくデータを更新
+  - 成功した場合と失敗した場合で分岐させる 
+- destroy
+  - current_userに紐づくデータを削除
+
+5つのアクション（new create edit update destroy）についてはログインしないと実行できないものとする。  
+そのため、`require_login`を before action で設定する。  
 
 ## View関係の実装
 
@@ -99,6 +182,10 @@ editのコードはシンプルだったので、画像だけ貼り付けた。
 
 【edit】（new)<br>
 <img src="02_posts_edit.png" width=300 border="1"><br>
+
+## 外部キー制約
+
+[外部キー制約について \- Qiita](https://qiita.com/SLEAZOIDS/items/d6fb9c2d131c3fdd1387)  
 
 
 ## 動作確認方法

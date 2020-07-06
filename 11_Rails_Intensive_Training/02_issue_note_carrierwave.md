@@ -26,6 +26,13 @@ Railsでは、`Active Storage`が標準搭載されている。
 `CarrierWave`にはアップローダーというものが出てくるが、このアップローダーに設定を  
 書き込むことで、保存先・ホワイトリスト・ファイル名などの設定ができる。  
 
+アップローダは以下のとおり作成。  
+Imageはあくまでアップローダファイル名を指定しているだけなので、自由に設定してよい。  
+
+```text
+rails generate uploader Image
+```
+
 今回の課題では以下のように設定されていた。  
 
 ```rb
@@ -106,3 +113,6 @@ end
 > - [Github: carrierwaveuploader/carrierwave](https://github.com/carrierwaveuploader/carrierwave)  
 > - [Railsでcarrierwaveを使ってAWS S3に画像をアップロードする手順を画像付きで説明する](https://qiita.com/junara/items/1899f23c091bcee3b058)  
 > - [画像周りの扱い方 \- Qiita](https://qiita.com/jiggaman0412/items/64cb44592923bde2e8ff)  
+> - [Rails 超お手軽な画像アップローダー CarrierWave の使い方 \| Workabroad\.jp](https://workabroad.jp/tech/1118)  
+> - [CarrierWave 複数の画像をコード三行で一つのカラムに保存する \- Qiita](https://qiita.com/ggtmtmgg/items/ba5f275c122c83013ea1)  
+> - [Carrierwaveで複数の画像をSQLiteのDBに保存する \- Qiita](https://qiita.com/Kanahiro/items/20d50393a916cd41b8d8)

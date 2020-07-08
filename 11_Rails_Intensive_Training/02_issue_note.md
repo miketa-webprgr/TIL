@@ -34,7 +34,7 @@
 `MiniMagick`と`RMagick`がある。  
 公式では、"MiniMagick is recommended."と書いてある。  
 
-今回は、あくまで`CarrierWave`の中でアップローダの中で設定するだけに留まる。  
+今回はあまり深い入りせず、画像のリサイズだけ行う。  
 
 [CarrierWave\+MiniMagickで使う、画像リサイズのメソッド \- Qiita](https://qiita.com/wann/items/c6d4c3f17b97bb33936f)  
 
@@ -52,30 +52,18 @@ GitHubのReadmeを読むと、異常なほどのダミーが作れることに�
 
 ## swiper
 
-すごいサイトがあった。  
-めちゃくちゃ分かりやすい。  
+いい感じのQiita記事がなかったので、自分で書いてみた。  
+想像以上に反響があったので、とても嬉しい。
+
+バージョンアップにより、生成されるファイルのディレクトリ構造などが変わった。
+
+> -[RailsでSwiperを導入する方法（Swiperは2020年7月にバージョンアップし、従来と設定方法が変わりました！） \- Qiita](https://qiita.com/miketa_webprgr/items/0a3845aeb5da2ed75f82)
+
+あと、このサイトはイメージを使む上でめちゃくちゃ分かりやすい。  
 
 > [サンプル付き！簡単にスライドを作れるライブラリSwiper\.js超解説（基礎編） \| ガリガリコード](https://garigaricode.com/swiper/)
 
-今回の場合、この仕組みさえ分かれば、解読できる。  
-
-```html
-<!-- Swiper START -->
-<div class="swiper-container">
-	<!-- メイン表示部分 -->
-	<div class="swiper-wrapper">
-		<!-- 各スライド -->
-		<div class="swiper-slide">Slide 1</div>
-		<div class="swiper-slide">Slide 2</div>
-		<div class="swiper-slide">Slide 3</div>
-		<div class="swiper-slide">Slide 4</div>
-	</div>
-	<div class="swiper-pagination"></div>
-</div>
-<!-- Swiper END -->
-```
-
-また、設定方法については以下を参照した。  
+設定方法については以下を参照した。  
 
 > - [公式サイト：Getting Started With Swiper](https://swiperjs.com/get-started/)  
 > - [swiperをyarnで導入して、画像をスライダー形式にする！ \- Qiita](https://qiita.com/kenkentarou/items/bdf04d8ecab6a855e50f)  
@@ -135,7 +123,6 @@ class Post < ApplicationRecord
   mount_uploaders :images, PostImageUploader
   
   # JSON形式で保存する為に必要
-  # Rails5以上の場合、不要との情報もあったが。。。
   serialize :images, JSON
 
   validates :images, presence: true
@@ -146,6 +133,7 @@ end
 ### コントローラ
 
 7つのアクションについて、よくあるような設定を行う。
+
 - index
   - 投稿データの一覧を表示（作成日順）
 - create
@@ -187,11 +175,17 @@ editのコードはシンプルだったので、画像だけ貼り付けた。
 
 [外部キー制約について \- Qiita](https://qiita.com/SLEAZOIDS/items/d6fb9c2d131c3fdd1387)  
 
+## その他
+
+- スマホ対応にあたっては、実装状況を確認するためGoogle Chromeの検証機能を活用した。
+- rubocopの指摘を除外する方法について知識を深めた。
+- rubocopから指摘を受け、モデルだけでなく、DB上でもユニーク制約を設けた。
 
 ## 動作確認方法
 
-1. git clone https://github.com/miketa-webprgr/instagram_clone.git
-2. git checkout git checkout -b feature/01_login_logout origin/feature/01_login_logout
-3. bundle install
-4. yarn install
+1. `git clone https://github.com/miketa-webprgr/instagram_clone.git`
+2. `git checkout git checkout -b feature/01_login_logout origin/feature/01_login_logout`
+3. `bundle install`
+4. `yarn install`
 5. MySQL と Redis を立ち上げる
+6. `rails db:migrate`

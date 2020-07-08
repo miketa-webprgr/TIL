@@ -106,6 +106,38 @@ class PostImageUploader < CarrierWave::Uploader::Base
 end
 ```
 
+## 複数画像を保存する場合
+
+Postモデルは、以下のとおりとなる。  
+
+```rb:Post.rb
+class Post < ApplicationRecord
+  mount_uploaders :images, ImageUploader
+  # 複数の画像を取り扱う場合、serializeメソッドが必要
+  # JSON形式でなくとも、複数の画像を受け取ることは可能
+  # ただ、posts_controllerにてJSON形式でデータを受け取るよう指定しているので、整合性を取る必要あり
+  serialize :images, JSON
+  validates :body, presence: true, length: { maximum: 1000 }
+  validates :images, presence: true
+
+  belongs_to :user
+end
+```
+
+重要な点は、以下のとおり。  
+
+- `mount_uploaders`には、「images」と複数形で書く
+- `serialize`メソッドを活用する
+- JSONを扱う場合、paramsの受け取り方も注意する（以下のコードを参照）
+
+```rb:posts_controller.rb
+# posts_controller.rbから該当部分を抜粋
+def post_params
+  # images:[]とすることで、JSON形式でparamsを受け取る
+  params.require(:post).permit(:body, images: [])
+end
+```
+
 ## 参考
 
 以下の記事が参考になった。  

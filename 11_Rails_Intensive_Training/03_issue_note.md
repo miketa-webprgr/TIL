@@ -26,8 +26,13 @@
     - [公式Github: kaminari（#helpers)](https://github.com/kaminari/kaminari#helpers)
 - 国際化の場合はここを参照
   - [公式Github: kaminari（#i18n-and-labels)](https://github.com/kaminari/kaminari#i18n-and-labels)
+
+### kaminariの非同期通信
+
 - 非同期で実装する場合は`remote: true`とすること
   - [公式Github: kaminari（#ajax)](https://github.com/kaminari/kaminari#ajax-links-crazy-simple-but-works-perfectly)
+- その場合、JSを書く必要がある
+  - 少しハードルが高そうなので、１時間強ほど試行錯誤した後に今回は見送った
 
 ### 参考
 
@@ -44,4 +49,5 @@
 3. `bundle install`
 4. `yarn install`
 5. MySQL と Redis を立ち上げる
-6. `rails db:migrate`（今回は不要）  
+6. `rails db:migrate`
+7. `rails db:seed`

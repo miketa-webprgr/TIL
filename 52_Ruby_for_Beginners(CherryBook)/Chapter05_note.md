@@ -270,3 +270,85 @@ buy_burger ('fish', params)
 # buy_burger('fish', drink: true, potato: false)とイコール
 ```
 
+## ハッシュについて詳しく
+
+### ハッシュでよく使うメソッド
+
+- keysメソッド
+  - ハッシュのキーを返す
+- valuesメソッド
+  - ハッシュの値を配列として返す
+- has_key?/key?/include?/member? メソッド
+  - has_key?メソッドは、指定されたハッシュの中にキーがあるか`t/f`を返す
+  - その他のメソッドは、エイリアスメソッド
+
+### **でハッシュを展開させる
+
+`**`をハッシュの前に付けると、ハッシュリテラルないで他のハッシュのキーと値を展開できる。  
+
+```rb
+h = { us: 'dollar', india: 'rupee' }
+# ハッシュの中に、`h`というハッシュを入れ子にできる
+# mergeメソッドを使って、同じことができる
+{ japan: 'yen', **h } #=> {:japan => "yen", :us => "dollar", :india => "rupee"}
+{ japan: 'yen'}.merge(h) #=> {:japan => "yen", :us => "dollar", :india => "rupee"}
+```
+
+### ハッシュを使った擬似キーワード
+
+これを見たら、キーワード引数と同じようなものだと理解すること。  
+キーワード引数はRuby2.0から導入されたため、古いコードだと見ることがあるらしい。  
+
+- `def buy_burger(menu, options ={})`
+
+### 任意のキーワードを受ける`**`引数
+
+これはエラーになる。
+
+```rb
+def buy_burger(menu, drink: true, potato: true)
+  # 省略
+end
+
+# saladというキーワード引数がないので、Argumentエラーになる
+buy_burger('fish', drink: true, potato: false, salad: true)
+```
+
+けど、こうしてやれば、キーワード引数がないものも受け取れる
+
+```rb
+# othersは記入しなくてもよい
+def buy_burger(menu, drink: true, potato: true, **others)
+  # 省略
+end
+
+# エラーにならない
+buy_burger('fish', drink: true, potato: false, salad: true)
+```
+
+### メソッド呼び出し時の`{ }`の省略
+
+最後の引数がハッシュであれば、ハッシュリテラルの`{ }`を省略できる。  
+これから書き換え前と書き換え後の事例を示す。
+
+なお、最後の引数ではない場合、ハッシュリテラルの`{ }`は省略できない。  
+
+```rb
+def buy_burger(menu, options = {})
+  puts options
+end
+
+buy_burger('fish', {drink: true, potato: false})
+#=> {:drink=>true, :potato=>false}
+```
+
+```rb
+def buy_burger(menu, options = {})
+  puts options
+end
+
+buy_burger('fish', drink: true, potato: false)
+#=> {:drink=>true, :potato=>false}
+```
+
+### ハッシュリテラルの`{ }`とブロックの`{ }`

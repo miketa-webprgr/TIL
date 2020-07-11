@@ -1,0 +1,64 @@
+<mxfile host="embed.diagrams.net" modified="2020-07-11T08:16:59.064Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.46.1 Chrome/78.0.3904.130 Electron/7.3.1 Safari/537.36" etag="ZaIIzzl1oeYSRE8oP_ol" version="13.4.2">
+    <diagram id="6hGFLwfOUW9BJ-s0fimq" name="Page-1">
+        <mxGraphModel dx="1078" dy="467" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="500" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="11" value="" style="group;fontSize=14;labelBackgroundColor=#ffffff;" parent="1" vertex="1" connectable="0">
+                    <mxGeometry x="90" y="70" width="120" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="&lt;br&gt;" style="verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.rect;fillColor2=none;strokeWidth=1;size=20;indent=5;" parent="11" vertex="1">
+                    <mxGeometry width="120" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="クライアント" style="text;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;labelBackgroundColor=none;" parent="11" vertex="1">
+                    <mxGeometry width="120" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="" style="group" parent="1" vertex="1" connectable="0">
+                    <mxGeometry x="350" y="70" width="120" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="" style="verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.rect;fillColor2=none;strokeWidth=1;size=20;indent=5;" parent="12" vertex="1">
+                    <mxGeometry width="120" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="モデル" style="text;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;labelBackgroundColor=none;" parent="12" vertex="1">
+                    <mxGeometry width="120" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="" style="group;labelBackgroundColor=none;" parent="1" vertex="1" connectable="0">
+                    <mxGeometry x="630" y="70" width="120" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="" style="verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.rect;fillColor2=none;strokeWidth=1;size=20;indent=5;" parent="13" vertex="1">
+                    <mxGeometry width="120" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="データベース" style="text;html=1;strokeColor=#6c8ebf;fillColor=#dae8fc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;labelBackgroundColor=none;" parent="13" vertex="1">
+                    <mxGeometry width="120" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="1" source="6" target="7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" parent="1" source="7" target="8" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="8" target="7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="7" target="6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="&lt;ul style=&quot;font-size: 16px&quot;&gt;&lt;li style=&quot;font-size: 16px&quot;&gt;SQliteなどではデータベース型として、JSONを扱うことができない&lt;/li&gt;&lt;li style=&quot;font-size: 16px&quot;&gt;その場合、データベースに複数の画像ファイルのデータを1つのカラムに保存することができない&lt;/li&gt;&lt;li style=&quot;font-size: 16px&quot;&gt;そこで、モデルがクライアントとデータベースの間を取り持つような役割を担う&lt;/li&gt;&lt;/ul&gt;" style="text;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;verticalAlign=middle;overflow=hidden;fontSize=16;" parent="1" vertex="1">
+                    <mxGeometry x="44" y="360" width="740" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="複数画像を投稿&lt;br&gt;&lt;br&gt;images: &lt;br&gt;&amp;nbsp; [&quot;image1&quot;,&quot;image2&quot;]&lt;br&gt;という配列型式でparamsが送られてくる。" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="70" width="120" height="186" as="geometry"/>
+                </mxCell>
+                <mxCell id="24" value="String型（文字列）&lt;br&gt;で保存&lt;br&gt;&lt;br&gt;&lt;br&gt;データベースではimageが二つあるというな区別がされることなく、[''image1&quot;, ''image2&quot;] という文字列を保存する" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="489" y="70" width="120" height="186" as="geometry"/>
+                </mxCell>
+                <mxCell id="26" value="String型（文字列）&lt;br&gt;のデータをモデルで配列として認識させる" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="484" y="280" width="130" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="27" value="複数画像を表示させる場合は、問題なく処理できる" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="280" width="120" height="40" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

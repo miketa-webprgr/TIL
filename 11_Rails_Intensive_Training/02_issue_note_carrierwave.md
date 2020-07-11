@@ -1,10 +1,25 @@
 # CarrierWave
 
-## 概要
+## どんな感じ？
+
+画像などのファイルを投稿できる機能。  
+
+<a href="https://gyazo.com/c05ccf28c84ffb9e9068d7a2cda1aa92"><img src="https://i.gyazo.com/c05ccf28c84ffb9e9068d7a2cda1aa92.png" alt="Image from Gyazo" width="500" border=1/></a><br>  
+
+ファイルを複数選択し、投稿する。  
+
+<a href="https://gyazo.com/a05a8dcd56c0e8c79d031ffa11cea1e6"><img src="https://i.gyazo.com/a05a8dcd56c0e8c79d031ffa11cea1e6.png" alt="Image from Gyazo" width="500" border=1/></a><br>  
+
+投稿後、ファイルが閲覧できるようになる。  
+なお、クルクル回す機能の実装には、Swiperが必要です。  
+
+<a href="https://gyazo.com/f8e8bb83918f8b8ef9d84b25f0bee2c4"><img src="https://i.gyazo.com/f8e8bb83918f8b8ef9d84b25f0bee2c4.gif" alt="Image from Gyazo" width="500" border=1/></a><br>  
+
+## 設定手順の概要
 
 - 画像投稿用のテーブルを作り、親となるモデルに紐付ける
 - アップローダーを作成し、そのファイルに設定を記述する
-- あとは、適切に画面に実装するだけ
+- あとは、適切にViewファイルに実装するだけ
 
 設定方法については、Qiita記事を参照すれば問題なくできそう。  
 公式のGitHubを紐解いていくと、細かいところも書いてある。  
@@ -24,10 +39,12 @@ Railsでは、`Active Storage`が標準搭載されている。
 ## アップローダについて
 
 `CarrierWave`にはアップローダーというものが出てくるが、このアップローダーに設定を  
-書き込むことで、保存先・ホワイトリスト・ファイル名などの設定ができる。  
+書き込むことで、保存先・保存不可とするファイルの設定・保存する場合のファイル名の設定などができる。  
 
 アップローダは以下のとおり作成。  
-Imageはあくまでアップローダファイル名を指定しているだけなので、自由に設定してよい。  
+
+アップローダファイル名は自由に設定できる。
+今回は`Image`としているが、変更してもよい。  
 
 ```text
 rails generate uploader Image
@@ -133,7 +150,6 @@ end
 ```rb:posts_controller.rb
 # posts_controller.rbから該当部分を抜粋
 def post_params
-  # images:[]とすることで、JSON形式でparamsを受け取る
   params.require(:post).permit(:body, images: [])
 end
 ```

@@ -20,7 +20,6 @@
 - 非同期・Ajax通信
 - `form_with`を使った非同期通信の実装
 - 文字列長のバリデーション
-  - モデルでバリデーション足すだけのはず
 - shallowルーティングとは
 
 ### １対多のAssociation
@@ -57,7 +56,7 @@ HTMLだと`<html>`というタグに始まり、`<body>`というタグがあり
 
 これは、Ajaxという技術によって実現される。  
 Ajaxとは、Asynchronized JS + XML(JSON)の略。  
-「JSとXMLを使って非同期通信行うよ」を意味する。  
+「JSとXMLを使って非同期通信行うよ」ということを意味する。  
 ただ、実際はXMLではなくて、JSONを使うことが多い。  
 
 裏側で行われている処理を分解すると、以下のとおり。  
@@ -70,11 +69,74 @@ Ajaxとは、Asynchronized JS + XML(JSON)の略。
 > - [初心者目線でAjaxの説明 \- Qiita](https://qiita.com/hisamura333/items/e3ea6ae549eb09b7efb9)  
 > - [非同期通信Ajaxをできるだけ分かりやすく説明してみた](https://applingo.tokyo/article/654)  
 
-## form_withを用いた非同期での実装
+## form_withを用いた非同期での具体的な実装
 
-長くなったので別ファイルとした。
+長くなったので別ファイルとした。  
+コードリーディングを頑張ってやってみた。  
 
 > - [form_withを用いた非同期での実装手順について](04_issue_note_comments-crud-ajax.md)
+
+## 文字列長のバリデーション
+
+以下を参照するとよい。  
+
+> - [Active Record バリデーション \- Railsガイド](https://railsguides.jp/active_record_validations.html#length)
+
+具体的には、モデルを以下のとおり修正する。  
+
+```rb:commnet.rb
+class Comment < ApplicationRecord
+  belongs_to :user
+  belongs_to :post
+
+  # length~を追加した
+  validates :body, presence: true, length: { maximum: 1000 }
+end
+```
+
+## shallowオプション
+
+以下に説明がある。  
+
+> コレクション (index/new/createのような、idを持たないアクション) だけを  
+> 親のスコープの下で生成するという手法があります。  
+>
+> このとき、メンバー (show/edit/update/destroyのような、idを必要とするアクション)  
+> をネストに含めないのがポイントです。  
+> [Rails のルーティング \- Railsガイド](https://railsguides.jp/routing.html#%E3%80%8C%E6%B5%85%E3%81%84%E3%80%8D%E3%83%8D%E3%82%B9%E3%83%88)  
+
+なお、コードは以下のとおりとなる。  
+これにより、コレクションの場合は親のスコープの下で生成する。  
+
+```rb:routes.rb
+resources :posts do
+  resources :comments, shallow: true
+end
+```
+
+つまり、ルーティングテーブルは下記のとおりとなる。  
+
+```text
+   post_comments GET    /posts/:post_id/comments(.:format)         comments#index
+                 POST   /posts/:post_id/comments(.:format)         comments#create
+new_post_comment GET    /posts/:post_id/comments/new(.:format)     comments#new
+    edit_comment GET    /comments/:id/edit(.:format)               comments#edit
+         comment GET    /comments/:id(.:format)                    comments#show
+                 PATCH  /comments/:id(.:format)                    comments#update
+                 PUT    /comments/:id(.:format)                    comments#update
+                 DELETE /comments/:id(.:format)                    comments#destroy
+```
+
+shallowオプションのメリットは、リソースが一意であることを保ちながら、  
+URLを極力短くすることができる点にある。  
+
+例えば、indexアクションについては、どのpostに紐づくか示さないと一意に保つことができない。  
+`/posts/:post_id`の部分は削ると、Aさんの〜投稿に対してのコメントであると示すことはできない。  
+これは、createアクションやnewアクションについても同様である。  
+
+他方、editアクションについては、`/posts/:post_id`がなくとも一意であることを示すことができる。  
+`/comments/:id`と`/:id`でどのコメントか明らかにできるため、どの投稿に属するか示す必要がない。  
+これは、showアクション、updateアクション、destroyアクションについても同様である。  
 
 ## 参考
 

@@ -6,7 +6,7 @@
 2. ページネーションにもbootstrapを適用する
 3. 1ページあたり15件とする
 
-### 分からない単語・概念等の一覧
+## 分からない単語・概念等の一覧
 
 - kaminari
 
@@ -34,7 +34,7 @@
 - その場合、JSを書く必要がある
   - 少しハードルが高そうなので、１時間強ほど試行錯誤した後に今回は見送った
 
-### 参考
+## 参考
 
 > -[公式Github: kaminari](https://github.com/kaminari/kaminari)  
 > -[【Rails】kaminariを使ってページネーションを実装する方法 \- Qiita](https://qiita.com/tomo_k09/items/b9242b6795f867a1844f)  

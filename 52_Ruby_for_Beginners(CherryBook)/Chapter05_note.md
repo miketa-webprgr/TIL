@@ -352,3 +352,53 @@ buy_burger('fish', drink: true, potato: false)
 ```
 
 ### ハッシュリテラルの`{ }`とブロックの`{ }`
+
+勘違いされる例として、ハッシュを省略したつもりなのに、  
+それが認識されず、ブロックとして認識されるパターンがある。  
+
+第一引数がハッシュである場合、括弧を忘れないようにしよう！  
+
+```rb
+def buy_burger( options = {}, menu )
+  puts options
+end
+
+# これは問題がない
+buy_burger({'drink' => true, 'potato' => false}, 'fish' )
+#=> {"drink"=>true, "potato"=>false}
+
+# 括弧を省略したため、ブロックとして認識されてしまった
+buy_burger {'drink' => true, 'potato' => false}, 'fish'
+#=> syntax error
+
+# ただし、第二引数以降がハッシュである場合、問題なく認識してくれる
+buy_burger  'fish', 'drink' => true, 'potato' => false
+#=> fish
+
+# ハッシュロケット記法をシンボルを使って書き直す場合
+buy_burger 'fish', drink: true, potato: false
+```
+
+### ハッシュから配列へ、配列からハッシュへ
+
+`to_a`メソッドを使うと、ハッシュを配列に変えることができる。  
+
+```rb
+currencies = { japan: 'yen', us: 'dollar', india: 'rupee' }
+currencies.to_a #=> [[:japan, "yen"], [:us, "dollar"], [:india, "rupee"]]
+```
+
+`to_h`メソッドを使うと、逆に配列をハッシュに変えることができる。  
+なお、ハッシュとして解析不能な配列である場合、エラーとなる。  
+
+```rb
+array = [['japan', 'yen'], ['us', 'dollar'], ['inidia', 'rupee']]
+array.to_h #=> => {"japan"=>"yen", "us"=>"dollar", "inidia"=>"rupee"}
+```
+
+## シンボルについてもっと詳しく
+
+- シンボルには、`_`や`!`や`?`も使えるし、`$`や`@`も使える。
+- シンボルを複数定義する場合、`%i`が使える。
+
+

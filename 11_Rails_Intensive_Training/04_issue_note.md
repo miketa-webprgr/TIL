@@ -13,22 +13,28 @@
 3. 文字列長など適切なバリデーションを付与する
 4. shallowルーティングを使用する
 
+## 具体的な実装手順について
+
+長くなったので別ファイルとした。  
+コードリーディングを頑張ってやってみた。  
+
+> - [コメント機能（非同期）の実装手順について](04_issue_note_comments-crud-ajax.md)
+
 ## 分からない単語・概念等の一覧
 
 - １対多のAssociation（投稿に対するコメントの紐付け）
 - モーダル
 - 非同期・Ajax通信
-- `form_with`を使った非同期通信の実装
 - 文字列長のバリデーション
 - shallowルーティングとは
 
-### １対多のAssociation
+## １対多のAssociation
 
 以下のQiita記事が参考になった。  
 
 > - [【初心者向け】丁寧すぎるRails『アソシエーション』チュートリアル【幾ら何でも】【完璧にわかる】🎸 \- Qiita](https://qiita.com/kazukimatsumoto/items/14bdff681ec5ddac26d1#user%E3%81%A8user%E3%81%AE%E5%A4%9A%E5%AF%BE%E5%A4%9Amn%E3%82%92%E8%A8%AD%E8%A8%88%E3%81%97%E3%82%88%E3%81%86%E8%87%AA%E5%B7%B1%E7%B5%90%E5%90%88)  
 
-### モーダルとは
+## モーダルとは
 
 イメージとしては以下が分かりやすい。  
 ポップアップ的な感じ。
@@ -41,7 +47,7 @@
 >
 > - [モーダルウィンドウとは？モーダル表示の役割とデメリットについて](https://www.seohacks.net/basic/terms/modal-window/)
 
-### 非同期・Ajax通信とは
+## 非同期・Ajax通信とは
 
 ぬるっと早い。  
 
@@ -68,13 +74,6 @@ Ajaxとは、Asynchronized JS + XML(JSON)の略。
 
 > - [初心者目線でAjaxの説明 \- Qiita](https://qiita.com/hisamura333/items/e3ea6ae549eb09b7efb9)  
 > - [非同期通信Ajaxをできるだけ分かりやすく説明してみた](https://applingo.tokyo/article/654)  
-
-## form_withを用いた非同期での具体的な実装
-
-長くなったので別ファイルとした。  
-コードリーディングを頑張ってやってみた。  
-
-> - [form_withを用いた非同期での実装手順について](04_issue_note_comments-crud-ajax.md)
 
 ## 文字列長のバリデーション
 
@@ -140,6 +139,25 @@ URLを極力短くすることができる点にある。
 
 ## 参考
 
-作成中
-
-## 動作確認方法
+> - [【初心者向け】丁寧すぎるRails『アソシエーション』チュートリアル【幾ら何でも】【完璧にわかる】🎸 \- Qiita](https://qiita.com/kazukimatsumoto/items/14bdff681ec5ddac26d1#user%E3%81%A8user%E3%81%AE%E5%A4%9A%E5%AF%BE%E5%A4%9Amn%E3%82%92%E8%A8%AD%E8%A8%88%E3%81%97%E3%82%88%E3%81%86%E8%87%AA%E5%B7%B1%E7%B5%90%E5%90%88)  
+> - [\[Rails\]モーダルウィンドウを作成する\(データを削除前に再度確認する\) \- Qiita](https://qiita.com/takachan_coding/items/9179cf361d0e92ae0bad)  
+> - [モーダルウィンドウとは？モーダル表示の役割とデメリットについて](https://www.seohacks.net/basic/terms/modal-window/)  
+> - [初心者目線でAjaxの説明 \- Qiita](https://qiita.com/hisamura333/items/e3ea6ae549eb09b7efb9)  
+> - [非同期通信Ajaxをできるだけ分かりやすく説明してみた](https://applingo.tokyo/article/654)  
+> - [Active Record バリデーション \- Railsガイド](https://railsguides.jp/active_record_validations.html#length)
+> - [Rails のルーティング \- Railsガイド](https://railsguides.jp/routing.html#%E3%80%8C%E6%B5%85%E3%81%84%E3%80%8D%E3%83%8D%E3%82%B9%E3%83%88)  
+> - [Rails5と BootstrapでAjax\-modalform \- Qiita](https://qiita.com/niwaken/items/ffbce52fb024fd369f24)  
+> - [Ajaxを用いた動的なコメント投稿・削除機能の実装で学ぶRuby on Rails \- 銀行員からのRailsエンジニア](https://ysk-pro.hatenablog.com/entry/2018/02/10/101739)  
+> - [Rails Bootstrap with Modal Form \- Qiita](https://qiita.com/tsunemiso/items/edbc58becf55875c4fdb)  
+> - [Ajax\(非同期通信\)についてわかりやすさ重視でまとめてみた\(Rails使用のデモ付\) \- Qiita](https://qiita.com/__tambo__/items/409ccf256e84017ea307)  
+> - [Railsで remote: true と js\.erbを使って簡単にAjax\(非同期通信\)を実装しよう！\(いいね機能のデモ付\) \- Qiita](https://qiita.com/__tambo__/items/45211df065e0c037d032)  
+> - [【Rails基礎】ややこしい部分テンプレートの省略形について簡単にまとめてみた｜TechTechMedia](https://techtechmedia.com/partial-template-rails/)  
+> - [\[Rails\] 部分テンプレート使用時のrenderの書き方 \- Qiita](https://qiita.com/kojiro3/items/4ce52494a4e69bc443a2)  
+> - [hamlでの部分テンプレートの呼び出し方の種類（省略形含む） \- Qiita](https://qiita.com/mgmmy/items/4de27770338ac3194e33)  
+> - [【Rails】form\_with/form\_forについて【入門】 \- Qiita](https://qiita.com/snskOgata/items/44d32a06045e6a52d11c#23-form_with-model-modela-modelb)  
+> - [KozakuraRyuuichiさんとだいそんさんのやり取り](https://github.com/KozakuraRyuuichi/trn_insta_clone/pull/6#discussion_r433299695)  
+> - [prepend\(content\) \- jQuery 日本語リファレンス](http://semooh.jp/jquery/api/manipulation/prepend/content/)  
+> - [【jQuery入門】prepend\(\)の使い方と要素の先頭に追加する方法まとめ！ \| 侍エンジニア塾ブログ（Samurai Blog） \- プログラミング入門者向けサイト](https://www.sejuku.net/blog/46746)  
+> - [RailsでAjax基本形（Scaffoldで学ぶ） \- Qiita](https://qiita.com/mm36/items/684f36f22e79d0a27ae9)  
+> - [ActionView::Helpers::JavaScriptHelper(escape_javascript)](https://api.rubyonrails.org/classes/ActionView/Helpers/JavaScriptHelper.html#method-i-escape_javascript)  
+> - [Action View の概要 \- Railsガイド](https://railsguides.jp/action_view_overview.html#javascripthelper)  

@@ -353,6 +353,12 @@ current_userが所有するlike_postsから`@post`を削除する。
 結局、likeの`id`は該当のアクションに接続するために利用するものでしかないので、  
 個人的に@postの形が変わるのは不自然な気がして、色々と調べてしまった。  
 
+だいそんさんに質問した結果、以下の回答を得た。
+
+- その設計だとlikeの`id`が何でもよくなってしまい、あまりよろしくない設計になる。
+- それならば、クエリパラメータを送るのをやめて、likeの`id`を活用した方がよい。
+  - [プルリクでのやり取り](https://github.com/miketa-webprgr/instagram_clone/pull/5)
+
 ```rb:likes_controller.rb
 class LikesController < ApplicationController
   before_action :require_login, only: %i[create destroy]

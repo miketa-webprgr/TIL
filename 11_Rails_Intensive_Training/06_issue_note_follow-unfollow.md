@@ -27,7 +27,7 @@ class CreateRelationships < ActiveRecord::Migration[5.2]
 
       t.timestamps
     end
-    # フォローするユーザー・フォローされるユーザーのidについて、indexを貼る
+    # フォローするユーザー・フォローされるユーザーのidについて、indexを貼る（パフォーマンス向上のため）
     add_index :relationships, :follower_id
     add_index :relationships, :followed_id
     # フォローやアンフォローができないよう、ユニーク制約をつける
@@ -48,103 +48,14 @@ resources :relationships, only: %i[create destroy]
 ## 2. Associationの設定
 
 続いて、Associationの設定を行う。  
-今回は多対多（自己結合）なので、Users対Usersの関係になる。  
 
-ついては、UserモデルとRelationshipモデルにおいて以下の実装を行う。  
-Qiita記事のとおりだが、難しいので整理をしながら理解に努める。  
+ここで目指すのは、ユーザーがフォローするユーザーの取得、  
+そして、ユーザーをフォローしているユーザーの取得である。  
 
-```rb
-# user.rb
-# Associationに係る部分のみ
+難しいので整理をしながら理解に努める。  
 
-  has_many :active_relationships, class_name: 'Relationship',
-                                  foreign_key: 'follower_id',
-                                  dependent: :destroy
-  has_many :passive_relationships, class_name: 'Relationship',
-                                   foreign_key: 'followed_id',
-                                   dependent: :destroy
-  has_many :following, through: :active_relationships, source: :followed
-  has_many :followers, through: :passive_relationships, source: :follower
-```
-
-```rb
-# relationship.rb
-# Associationに係る部分のみ
-class Relationship < ApplicationRecord
-  belongs_to :follower, class_name: 'User'
-  belongs_to :followed, class_name: 'User'
-end
-```
-
-色々と書いてあるが、多対多であることは変わらないので、順を追って理解する。  
-まず、本当はこう書いて済ましたいことを理解する。  
-
-```rb
-# user.rb
-# Associationに係る部分のみ
-
-  # userモデルから、relationshipモデルを通して、followしているユーザーを取得したい
-  has_many :following, through :relationships, source: :user
-  # userモデルから、relationshipモデルを通して、followersであるユーザーを取得したい
-  has_many :followers, through :relationships, source: :user
-```
-
-```rb
-# relationship.rb
-# Associationに係る部分のみ
-
-  # followしているユーザー取得時に使われる
-  belongs_to :user
-  # followrsであるユーザー取得時に使われる
-  belongs_to :user
-```
-
-ただし、これではどちらのモデルにおいても、同じことを２回繰り返しているだけであり、  
-実装はうまくいかない。そこで、まずUserモデルの問題から解決する。  
-
-Userモデルにおいては、自己結合ではない関係と異なり、Relationshipモデルのどちらを  
-外部キーとして参照するか不明瞭であるため、以下のとおり設定するとよい。  
-
-```rb
-# user.rb
-# Associationに係る部分のみ
-
-  # 外部キーをfollower_idとして指定し、Relationshipモデルを取得する。これを'active_relationships`と命名する。  
-  has_many :active_relationships, class_name: 'Relationship', foreign_key: 'follower_id'
-  # 外部キーをfollowed_idとして指定し、Relationshipモデルを取得する。これを'passive_relationships`と命名する。  
-  has_many :passive_relationships, class_name: 'Relationship', foreign_key: 'followed_id'
-
-  # userモデルから、arelationshipモデルを通して、followしているユーザーを取得したい
-  has_many :following, through :active_relationships, source: :user
-  # userモデルから、relationshipモデルを通して、followersであるユーザーを取得したい
-  has_many :followers, through :passive_relationships, source: :user
-```
-
-これで、`follower_id`を外部キーに指定する場合、`followed_id`を外部キーとして取得する場合に分けることができた。  
-続いて、Relationshipモデルにおける問題を解決する必要がある。  
-
-`belongs_to :user`と２回続くような形になってたので、改めて命名し、場合分けてしてあげる必要がある。  
-また、これによりUserモデルについても、`source`が変わるので、対応させる必要がある。  
-
-```rb
-# relationship.rb
-# Associationに係る部分のみ
-
-  belongs_to :follower, class_name: 'User'
-  belongs_to :followed, class_name: 'User'
-```
-
-```rb
-# user.rb
-# Associationのsourceが出てくる部分のみ
-
-  # ユーザーがフォローしているユーザーを取得する
-  has_many :following, through :active_relationships, source: :follower
-  # ユーザーをフォローしているユーザーを取得する
-  has_many :followers, through :passive_relationships, source: :followed
-```
-
-この結果、先ほどのような最初のモデルの形に落ち着く。  
+なお、解説的なものを書いていたらかなり長くなったので、別ファイルとした。  
+- [フォロー・アンフォローのアソシエーション](06_issue_note_follow-unfollow_association.md)
 
 ## 3. Relationshipモデルにバリデーションをかける
 
@@ -197,12 +108,13 @@ Userモデルにて以下のメソッドを追加する。
   end
   ```
 
-また、postの一覧画面にユーザーを表示させる場合、全員を表示させると長くなってしまう。  
+また、投稿の一覧画面にユーザーを表示させる場合、全員を表示させると長くなってしまう。  
 順番についても、作成された順番に並べたいので、scopeを以下のように指定する。  
 
 ```rb
 # user.rb
 # scopeに関係する部分のみ
+# https://qiita.com/ngron/items/14a39ce62c9d30bf3ac3
   scope :recent, ->(count) { order(created_at: :desc).limit(count) }
 ```
 
@@ -423,6 +335,7 @@ resources :users, only: %i[index new create show]
 コードについては、下記のとおりとなる。  
 
 ```slim
+/ users/index.html.slim
 .container
   .row
     .col-md-6.col-12.offset-md-3.mb-3

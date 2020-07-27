@@ -16,6 +16,13 @@ https://tech-essentials.work/courses/7
   - 間違いではないが、個人的には紛らわしい気がする。
   - なぜなら、`User.all`と書いて探索できるという意味で、モデルのクラス名そのまま（つまり単数形）で探索できると解釈すると、この問題は×と回答してしまうから。
   - 代案：ActiveRecordを使うと、`User.all`といった形で記述することによりデータベースを取得できるが、この際にアクセスしているのはモデルのクラス名を複数形にしたデータベースである。
+- 問題５：`user = User.first` が間違いとされているが、間違っているのは `david = User.find(name: 'David')` だと思われる
+- 問題８：以下は正しい挙動とされているが、本当はfalseになるが正しい挙動であると思われる
+
+    ```rb
+    user = User.new
+    user.save  # => ActiveRecord::RecordInvalid: Validation failed: Name can't be blank
+    ```
 
 ## 解説はこちらから
 

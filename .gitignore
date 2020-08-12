@@ -129,6 +129,7 @@ Temporary Items
 .history/
 
 # private
+/12_RailsTest/kaisetsu-hidden.md
 /71_shukatsu
 /82_TODOS
 /98_Stock_BuySell_NoticeSender

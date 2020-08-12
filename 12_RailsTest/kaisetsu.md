@@ -1,15 +1,20 @@
 # Railsテストに対する解説
 
-## 問題 1
+## 問題の掲載先
 
-ActiveRecordについて正しい記述はどれか
+以下を参照すること。  
+なお、TechEssentialsにログインする必要がある。  
 
-- バリデーション(検証)もActiveRecordの機能の一つである
-- データベースをオブジェクト指向スタイルで操作するものである
-- RailsのモデルはActiveRecordを継承している
-- Railsにおける基本的なルールとして、モデル名は複数形、テーブル名は単数形とする必要がある
+https://tech-essentials.work/courses/7/take_quiz/new
 
-### ActiveRecordの機能
+なお、問題の作成にあたっては、Railsガイドを参考にしたとのことなので、  
+基本的にはそちらを参照すれば詳しい情報を得ることができる。  
+
+## 問題1
+
+ActiveRecordについて正しい記述はどれか問うもの。  
+
+### 問題1: 解説ActiveRecordの機能
 
 Railsガイドに書いてある。  
 ORM(Object-Relational Mapping)というものらしい。  
@@ -28,7 +33,7 @@ ActiveRecordの機能は、以下に書いてあるとおり。
 
 - [ORMフレームワークとしてのActive Record](https://railsguides.jp/active_record_basics.html#orm%E3%83%95%E3%83%AC%E3%83%BC%E3%83%A0%E3%83%AF%E3%83%BC%E3%82%AF%E3%81%A8%E3%81%97%E3%81%A6%E3%81%AEactive-record)  
 
-### RailsのモデルはActiveRecordを継承している
+### 問題1: RailsのモデルはActiveRecordを継承している
 
 開発しているRailsのアプリを開き、適当なモデルのファイルを開いてみよう。  
 こうなっているはず。継承してい流ことが分かる。  
@@ -38,7 +43,7 @@ class Product < ApplicationRecord
 end
 ```
 
-### Railsにおける命名ルール
+### 問題1: Railsにおける命名ルール
 
 - モデルのクラス - 単数形、語頭を大文字にする (例: BookClub)
 - データベースのテーブル - 複数形、語はアンダースコアで区切られる (例: book_clubs)
@@ -48,16 +53,12 @@ end
 
 - [命名ルール](https://railsguides.jp/active_record_basics.html#%E5%91%BD%E5%90%8D%E3%83%AB%E3%83%BC%E3%83%AB)  
 
-## 問題 2
+## 問題2
 
-モデルについて正しい記述はどれか
+モデルについて正しい記述はどれか問うもの。  
+基本的には、問題１で解説した内容でカバーしているため、そちらを参照するとよい。  
 
-- ActiveRecordを継承している
-- 複数形で定義する
-- 対応するテーブルは単数形で定義する
-- クラス名はケバブケースで書く
-
-### ケバブケース・キャメルケース・スネークケース
+### 問題2: ケバブケース・キャメルケース・スネークケース
 
 | 名称         | 用例       | 主な言語                |                名称の由来                |
 | ----------- | ---------- | --------------------- | --------------------------------------- |
@@ -68,26 +69,13 @@ end
 気合で覚えると大変。以下のように覚えよう。  
 多分、RubyやRailsでケバブケースって使わない。  
 
-### 解説 2
-
-基本的には、問題１で解説した内容でカバーしている。  
-
-繰り返しになるが、モデルはキャメルケースで単数系。  
+モデルはキャメルケースで単数系。  
 例えば、`QuizProblem`のようにすること。  
 
 テーブルはスネークケースで複数形。  
 例えば、`quiz_problems`のようにすること。  
 
-## 問題 3
-
-以下のうち正しい記述はどれか
-
-- Railsではデータベースのテーブル名を探索するときにモデルのクラス名を複数形にした名前で探索する
-- クラス名はケバブケースで書く
-- 外部キーはテーブル名の複数形_idで定義する
-- 主キーはオートインクリメントされる
-
-### 解説 3
+## 問題3
 
 基本的には、問題１や問題２で解説したとおり。  
 以下、補足を記載する。  
@@ -133,28 +121,8 @@ idの自動採番のことを言うらしい。
 
 ## 問題 4
 
-以下のうち文法的に正しいものを選べ。  
-
-```rb
-User.create(name: "David", occupation: "Code Artist")
-```
-
-```rb
-user = User.new
-user.name = "David"
-user.occupation = "Code Artist"
-user.save
-```
-
-```rb
-user = User.new(name: "David", occupation: "Code Artist")
-user.save
-```
-
-```rb
-user = User.new(name="David", occupation="Code Artist")
-user.save
-```
+CRUDに関するメソッドについて問うもの。  
+具体的にはcreate, newなどのメソッド。  
 
 ### 解説 4
 
@@ -175,24 +143,7 @@ user = User.new(:name => "David", :occupation => "Code Artist")
 
 ## 問題 5
 
-以下のうちエラーになるものはどれか
-
-```rb
-users = User.where(name: "taro")
-users.name
-```
-
-```rb
-user = User.first
-```
-
-```rb
-david = User.find(name: 'David')
-```
-
-```rb
-users = User.where(name = 'David', occupation = 'Code Artist')
-```
+ActiveRecordのメソッドについて問うもの。  
 
 ### 解説 5
 
@@ -229,28 +180,8 @@ id以外のものである場合は例外処理となる。（例外処理にし
 
 ## 問題 6
 
-名前を更新する処理として正しいものはどれか
-
-```rb
-user = User.find_by(name: 'David')
-user.name = 'Dave'
-user.save
-```
-
-```rb
-User.find_by(name: 'David').update(name: 'Dave')
-```
-
-```rb
-user = User.find(name: 'David')
-user.name = 'Dave'
-user.save
-```
-
-```rb
-user = User.find_by(name: 'David')
-user.update(name: 'Dave')
-```
+問題5の類似問題。  
+update関連のメソッドについて問うもの。  
 
 ### 解説 6
 
@@ -271,12 +202,8 @@ id以外のものである場合は例外処理となる。（例外処理にし
 
 ## 問題 7
 
-ユーザーを全削除する記述として正しいものはどれか
-
-- `User.all.destroy`
-- `User.destroy.all`
-- `User.destroy_all`
-- `User.delete!`
+問題5の類似問題。  
+destroy系のメソッドについて問うもの。  
 
 ### 解説 7
 
@@ -322,34 +249,7 @@ Railsガイドに書いてある。
 
 ## 問題 8
 
-以下のような定義がある場合の挙動として正しいものはどれか
-
-```rb
-# このようなクラスを前提とする
-class User < ApplicationRecord
-  validates :name, presence: true
-end
-```
-
-```rb
-user = User.new
-user.save  # => ActiveRecord::RecordInvalid: Validation failed: Name can't be blank
-```
-
-```rb
-user = User.new
-user.save! # => false
-```
-
-```rb
-user = User.new
-user.name = "DHH"
-user.save # => true
-```
-
-```rb
-User.create(name: "DHH") # =>  #<User:0x00007f7f8a4a3cb8 id: ~~~
-```
+validationに関する問題。  
 
 ### 解説 8
 
@@ -368,3 +268,86 @@ Railsガイドに書いてある。
 だが、いずれのメソッドも逆の結果を示しているので、挙動として正しいものではない。  
 
 最後の２つの選択肢については、問題なくsaveやcreateができるケースであり、挙動として正しいものである。  
+
+## 問題 9
+
+マイグレーションファイルに関する問題。  
+マイグレーションコマンドについて問うものとなっている。  
+
+### 解説 9
+
+Railsガイドにおいて該当する部分は以下のとおりである。  
+
+- [Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html)  
+
+ここで書いてある概要は分かりづらい。（基本的な部分は分かっている前提で書かれている）  
+そこで、自分なりに分かりやすい解説を書いてみる。  
+
+なお、この問題に関する情報としては、Railsガイドの先ほどの解説の中から、  
+「5 既存のマイグレーションを変更する」を参照するとよい。  
+
+- [5 既存のマイグレーションを変更する --- Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html#%E6%97%A2%E5%AD%98%E3%81%AE%E3%83%9E%E3%82%A4%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E5%A4%89%E6%9B%B4%E3%81%99%E3%82%8B)
+
+### そもそもデータベースとは
+
+そもそも、データベースとRailsというのは全くの別物である。  
+Railsの中にデータベースが保存されていると考えたりすると混乱の元となるので、ここをまず抑える必要がある。  
+（sqliteについては、アプリケーションに組み込んで利用されるデータベースであるため、Rails内にデータベースがあると考えてもよいかも）  
+
+データベースを管理するソフトウェアとして代表的なものは、MySQLやPostgreSQLなどがある。  
+（また、変わり種としてRedisというものなどもあるが、ここではその概要に踏み込まない）  
+
+これらを利用する場合、Railsとはまた別のサーバーを立ち上げる必要があり、  
+そちらのサーバーにおいて、データベースが保存されている。  
+
+### そもそもマイグレーションファイルとは
+
+では、マイグレーションファイルとは何なのか。  
+
+詳しくは以下を参照してもらいたいが、マイグレーションファイルとはデータベースの操作について命令を書いたコードであり、  
+このマイグレーションファイルを実行することで、Railsを介する形で、データベースを作成したり、カラムを追加したり、  
+保存できる情報について制約を加えたりすることができる。  
+
+- [Rails初心者がつまずきやすい「マイグレーション」](https://www.transnet.ne.jp/2015/12/29/rails%E5%88%9D%E5%BF%83%E8%80%85%E3%81%8C%E3%81%A4%E3%81%BE%E3%81%9A%E3%81%8D%E3%82%84%E3%81%99%E3%81%84%E3%80%8C%E3%83%9E%E3%82%A4%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%80%8Dcolnr/)
+- [DIVE INTO CODE \| Railsにおけるマイグレーションとは](https://diveintocode.jp/blogs/Technology/migration#:~:text=%E3%83%9E%E3%82%A4%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%A8%E3%81%AF%E3%80%81Ruby,%E3%81%AE%E3%81%93%E3%81%A8%E3%82%92%E6%8C%87%E3%81%97%E3%81%BE%E3%81%99%E3%80%82)
+- [【Rails】マイグレーションファイルを徹底解説！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/migration)
+
+アプリケーションを開発する場合、まず扱うデータベースの「型」を決める必要がある。  
+例えば、usersテーブルを作成し、usernameやemailアドレスというカラムを用意する必要があるだろう。  
+
+こうした操作は、マイグレーションファイルの実行によって、Railsから操作することができる。  
+
+もちろん、MySQLなどのデータベースの管理ソフトを開き、そちらのソフトの方から直接操作を行うことも可能である。  
+ただ、わざわざMySQLを開き、Railsで書いているコードと整合性を取るのは面倒であるし、エラーを生む原因の温床となってしまう。  
+
+また、マイグレーションファイルという形で命令の履歴を残すことができるので、チーム開発を行う上で色々と便利になる。  
+
+マイグレーションファイルの具体的な操作の方法については、pikawakaやQiitaの記事などに分かりやすい記事が掲載されている。  
+以下では参考までに、pikawakaの記事を掲載する。  
+
+- [【Rails】マイグレーションファイルを徹底解説！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/migration)
+
+もちろん、Railsガイドを参照すると詳しく書いてあるので、そちらも併せて参照するとよい。  
+
+### さて、問題を解いてみる
+
+順を追って、各選択肢に誤りがないか検討していく。  
+
+最初の選択肢であるが、マイグレーションファイルに誤りがあった場合、まずrollbackしなければいけない。  
+そのまま一部修正し再度db:migrateを行なっても、修正は反映されないので、誤りである。  
+
+このことは、Railsガイドのこの部分においてはっきりと書いてある。  
+
+- [5 既存のマイグレーションを変更する --- Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html#%E6%97%A2%E5%AD%98%E3%81%AE%E3%83%9E%E3%82%A4%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E5%A4%89%E6%9B%B4%E3%81%99%E3%82%8B)
+
+次に２つ目の選択肢であるが、マイグレーションファイルを再度実行するコマンドはdb:migrate:resetである。  
+よって、誤りであり、３つ目の選択肢が誤っていること、4つ目の選択肢が正しいことも同時に分かる。  
+
+なお、db: resetのコマンドは、マイグレーションコマンドを再度実行するものでなく、  
+schema.rbを活用して再構築するものなので、注意すること。  
+
+- [4.3 データベースをリセットする --- Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html#%E3%83%87%E3%83%BC%E3%82%BF%E3%83%99%E3%83%BC%E3%82%B9%E3%82%92%E3%83%AA%E3%82%BB%E3%83%83%E3%83%88%E3%81%99%E3%82%8B)
+- [rails db:migrate:resetできなかったのでrails db:resetした \- Qiita](https://qiita.com/mom0tomo/items/a252ff8a42eea00f81b1)
+
+
+

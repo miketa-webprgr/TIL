@@ -349,5 +349,67 @@ schema.rbを活用して再構築するものなので、注意すること。
 - [4.3 データベースをリセットする --- Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html#%E3%83%87%E3%83%BC%E3%82%BF%E3%83%99%E3%83%BC%E3%82%B9%E3%82%92%E3%83%AA%E3%82%BB%E3%83%83%E3%83%88%E3%81%99%E3%82%8B)
 - [rails db:migrate:resetできなかったのでrails db:resetした \- Qiita](https://qiita.com/mom0tomo/items/a252ff8a42eea00f81b1)
 
+## 問題 10
 
+以下のマイグレーションファイルについての説明で正しいものはどれか尋ねる問題。  
+具体的なマイグレーションファイルのコードがあるので、その中身の理解度を問うている。  
 
+### 解説 10
+
+Railsガイドにおいて該当する部分は以下のとおりである。  
+問題9と同じ範囲を扱っているが、今回は具体的なマイグレーションファイルの内容について尋ねられている。  
+
+- [Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html)  
+
+また、今回のケースにおいては、pikawakaのサイトが初学者向けに分かりやすく説明しているため、参考にするとよい。  
+
+- [【Rails】マイグレーションファイルを徹底解説！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/migration)
+
+### マイグレーションファイルの自動作成
+
+RailsガイドやPikawakaに掲載されている。  
+
+- [2.1 単独のマイグレーションを作成する --- Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html#%E5%8D%98%E7%8B%AC%E3%81%AE%E3%83%9E%E3%82%A4%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B)
+- [2.2 モデルを生成する --- Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html#%E3%83%A2%E3%83%87%E3%83%AB%E3%82%92%E7%94%9F%E6%88%90%E3%81%99%E3%82%8B)
+- [マイグレーションファイルの作成方法 --- 【Rails】マイグレーションファイルを徹底解説！ \| Pikawaka](https://pikawaka.com/rails/migration#%E3%83%9E%E3%82%A4%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB%E3%81%AE%E4%BD%9C%E6%88%90%E6%96%B9%E6%B3%95)
+
+以上に掲載のとおり、`rails g model`を使うとmodelと併せてmigrationファイルを作成できる。  
+また、`rails g migration`を使うとmigrationファイルのみを作成できる。  
+
+### t.referencesについて
+
+マイグレーションファイルにおいては、`t.string`といった形式にて、カラムの型を指定している。  
+このカラムの型には様々な種類があり、使っているデータベース管理ソフトの種類によって、扱えるデータ型の数も異なる。  
+（例えば、sqliteは使えるデータ型の種類にかなり限りがあるとのこと）  
+
+この中で特徴的なのが、`t.references`というものだ。  
+
+一見すると、`t.references :user, foreign_key: true`と書いてあると、  
+references型のカラムにuserという名前を付けようとしているように思えるが、  
+実際のところ、カラム名はuserではなく、user_idとなる。  
+
+referencesは、多くの場合、外部キーを作成する時に使われる。  
+（indexを貼るためやpolymorphicとするために使われることもあるもよう）
+この型のカラムがあることで、テーブルのjoinが可能になる。  
+
+なお、外部キーとして指定するためには、`foreign_key: true`とする必要がある。  
+
+### add_indexについて
+
+以下に記載のとおり、add_indexとは、indexを貼るためのものであり、  
+引数としては、まずtable名、次にカラム名、最後に`unique: true`などのオプションがつく。  
+
+```rb
+add_index(table_name, column_name, options = {})
+```
+
+- [ActiveRecord::ConnectionAdapters::SchemaStatements](https://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_index)
+
+### 各選択肢の検討
+
+- userというカラムが作られ訳ではなく、user_idというカラムが作られ、外部キーとして指定される。
+- `add_index :products, :sku, unique: true`により、skuは一意でなければならない。
+- `rails g model`を使うとmodelと併せてmigrationファイルを作成できる。  
+- `t.references :user, foreign_key: true`により、user_idには外部キー制約がついている。
+
+以上のことから、１番目の選択肢を除き、全ての選択肢が正しいと判断できる。  

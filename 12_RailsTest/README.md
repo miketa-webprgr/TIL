@@ -24,6 +24,8 @@ https://tech-essentials.work/courses/7
     user.save  # => ActiveRecord::RecordInvalid: Validation failed: Name can't be blank
     ```
 
+- 問題10：「user_idには外部キー制約がついているのでnullを入れることはできない」は正しいと思われる。
+
 ## 解説はこちらから
 
 [kaisetsu.md](kaisetsu.md)

@@ -63,11 +63,11 @@ end
 
 メドピア開発者の方のブログを引用するが、フォームオブジェクトは以下のような場合に活用できる。  
 
-> **form object って何？**
+> **form object って何？**  
 > form_withのmodelオプションにActive Record以外のオブジェクトを渡すデザインパターンです。  
-> form_withのmodelオプションに渡すオブジェクト自体もform objectと呼びます。
+> form_withのmodelオプションに渡すオブジェクト自体もform objectと呼びます。  
 >
-> 利点は大きく次の2点です。
+> 利点は大きく次の2点です。  
 >
 > 1. DBを使わないフォームでも、Active Recordを利用した場合と同じお作法を利用できるので可読性が増す
 > 2. 他の箇所に分散されがちなロジックをform object内に集めることができ、凝集度を高められる  
@@ -298,3 +298,11 @@ SELECT `posts`.* FROM `posts` WHERE (body LIKE '%the%')
       = render @posts
       = paginate @posts
 ```
+
+## 検索ワードがフォームに残すための実装
+
+これまでの実装では、検索ワードがフォームに残らなかったため、  
+以下のとおり、`application_controller.rb`にてparamsを取得し、  
+検索ワードをsearch_fieldのvalueに引き渡すよう設定した。  
+
+- [[fix] 検索ワードがフォームに残るように実装（07 投稿の検索機能の実装）· Pull Request \#7](https://github.com/miketa-webprgr/instagram_clone/pull/7/commits/f473cb0ac8962581ffbcaf4ed034b20eb482a42d)  

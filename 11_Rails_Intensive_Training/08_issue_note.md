@@ -10,8 +10,8 @@
 
 <a href="https://gyazo.com/0ecf1fca07bdcf7707a312b7f312b53e"><img src="https://i.gyazo.com/fcedcb0dfac8c88e2319882f8feea939.gif" alt="Image from Gyazo" width="500"/></a></a><br>  
 
-## 求められている機能実装・実装条件についてについて
-
+## 求められている機能実装・実装条件について
+
 既にgifにて表示したとおり、以下を実装する。  
 
 - ユーザーの詳細ページで同ユーザーの投稿を一覧表示させる。  

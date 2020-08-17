@@ -56,6 +56,7 @@ rails generate uploader Image
 class PostImageUploader < CarrierWave::Uploader::Base
   # Include RMagick or MiniMagick support:
   # 今回はMiniMagickが採用されている
+  # 使う場合、HomebrewなどでImagaMagickをインストールすること
   include CarrierWave::MiniMagick
 
   # resize_to_fit(): そのサイズに合うようにリサイズ。（大きくなることがある。）

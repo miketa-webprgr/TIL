@@ -172,9 +172,14 @@ namespaceを使って、ディレクトリを分ける方がスマートであ�
 
 ## ビューファイルの実装
 
+続いて、プロフィール編集画面に関係する実装を行なっていく。  
+まず、application.html.slimファイルに代わって、`layouts/mypage.html.slim`ファイルを用意する。  
+
+namespaceを使ったことで、ビューファイル内で分岐をさせるような形で対応する必要がなくなった。  
+
 ```slim
-# mypage.html.slim
-# application.html.slimのマイページ版と捉えてよい
+/layouts/mypage.html.slim
+/application.html.slimのマイページ版と捉えてよい
 
 doctype html
 html
@@ -203,10 +208,174 @@ html
                       = yield
 ```
 
+なお、画面構成であるが、以下のとおりとなっている。  
+
+<a href="https://gyazo.com/0ecf1fca07bdcf7707a312b7f312b53e"><img src="09_issue_note_01.png" alt="Image from Gyazo" width="500"/></a></a><br>  
+
+次に、雛形となる`layouts/mypage.html.slim`ファイルに流し込む、  
+`mypage/shared/sidebar`を用意する。  
+
+今後、このサイドバーにプロフィール編集以外のメニューを追加していく。  
+
+```slim
+/mypage/shared/_sidebar.html.slim
+
+nav
+  ul.list-unstyled
+    li
+      = link_to 'プロフィール編集', edit_mypage_account_path
+      hr
+```
+
+続いて、雛形となる`layouts/mypage.html.slim`ファイルのyieldに流し込む、  
+`edit.html.slim`を用意する。プロフィール編集画面の核となる部分である。  
+
+```slim
+/mypage/accounts/edit.html.slim
+/yield部分で読み込まれる
+
+= form_with model: @user, url: mypage_account_path, method: :patch, local: true do |f|
+  = render 'shared/error_messages', object: f.object
+  .form-group
+    = f.label :avatar
+    / onchangeを使うことで、ファイルアップロード後にJSが発火する
+    / acceptオプションを使い、画像ファイルのみしか受け付けないよう制限をかける
+    = f.file_field :avatar, onchange: 'previewFileWithId(preview)', class: 'form-control', accept: 'image/*'
+    / バリデーションエラーが発生してフォームが再表示された場合も、キャッシュを活用してファイルを保持する
+    = f.hidden_field :avatar_cache
+    = image_tag @user.avatar.url, class: 'rounded-circle', id: 'preview', size: '100x100'
+  .form-group
+    = f.label :username
+    = f.text_field :username, class: 'form-control'
+
+  = f.submit class: 'btn btn-primary btn-raised'
+```
+
+コードを理解するにあたって、以下の記事を参考にした。  
+
+- [f.file-fieldについて --- ActionView::Helpers::FormBuilder](https://api.rubyonrails.org/v5.2.4/classes/ActionView/Helpers/FormBuilder.html#method-i-file_field)
+- [【Rails】画像の即時プレビュー機能を実装 \- エンジニアを目指す修行Blog](https://angrooo.hatenablog.com/entry/2020/04/21/144507)
+- [【10分でマスター】onChangeでフォームの項目をコントロールしよう \| 侍エンジニア塾ブログ（Samurai Blog） \- プログラミング入門者向けサイト](https://www.sejuku.net/blog/25060)
+
+なお、プレビュー画面を表示させるため、onchangeオプションが使われている。  
+
+## プレビュー機能の実装
+
+ファイルアップロード後に発火されるJSは、以下のとおりとなっている。  
+
+まだよく分かっていないが、JavascriptでFileAPIっていうのを使っているらしい。  
+このQiita記事が非常によくまとまっているので、参考にすると良さそう。  
+
+- [JavaScript FileAPIについて学ぶ \- Qiita](https://qiita.com/kodokunadancer/items/8028d87d8d2bc6c00e69)
+
+```js
+assets/javascripts/mypage.js
+
+function previewFileWithId(selector) {
+    // 大まかな流れ
+    // アップロード機能を担うinputタグを取得 → そのタグからアップロードしたファイルを取得
+    // そのファイルを読み込み、読み込み終わった後に元のアバターと差し替えるイベントを実行する
+
+    // jQueryにevent.targetというものがあり、イベント発生源である要素（h1やpなど）を取得する。
+    // 今回の場合、`f.file_field :avatar, onchange: 'previewFileWithId(preview)', class: 'form-control', accept: 'image/*'`の部分のinputタグを取得
+    // [https://www.w3schools.com/jquery(event.target)](https://www.w3schools.com/jquery/tryit.asp?filename=tryjquery_event_target)
+    const target = this.event.target;
+
+    // filesを使うと、転送中のファイルを取得できる
+    // [DataTransfer\.files \- ファイルの一覧 \| DOMリファレンス](https://lab.syncer.jp/Web/API_Interface/Reference/IDL/DataTransfer/files/)
+    const file = target.files[0];
+
+    // ファイルを読み込む
+    // [FileReader \- Web API \| MDN](https://developer.mozilla.org/ja/docs/Web/API/FileReader)
+    const reader  = new FileReader();
+
+    // loadendイベントについて記述したコード（これにより、プレビュー画像が非同期通信にて表示される）
+    // loadがendした時に発火する
+    // reader.addEventListener("load", function () { selector.src = reader.result;}, false)と書き換えることができる
+    // [GlobalEventHandlers\.onloadend \- Web APIs \| MDN](https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onloadend)
+    reader.onloadend = function () {
+        selector.src = reader.result;
+    }
+
+    // 指定されたファイルオブジェクトを読み込むために使用するメソッド
+    // 読込処理が終了すると readyState は DONE に変わり、loadend イベントが生じる。
+    // それと同時に result プロパティにはファイルのデータを表す、base64 エンコーディングされた data: URL の文字列が格納される。
+    // [FileReader\.readAsDataURL\(\) \- Web API \| MDN](https://developer.mozilla.org/ja/docs/Web/API/FileReader/readAsDataURL)
+    if (file) {
+        reader.readAsDataURL(file);
+
+    // ファイルがない場合、`selector.src`を空にする
+    } else {
+        selector.src = "";
+    }
+}
+```
+
+なお、onloadendとして、失敗した場合については、空のアイコンを表示させるようにしている。  
+
+<a href="https://gyazo.com/0ecf1fca07bdcf7707a312b7f312b53e"><img src="https://i.gyazo.com/367b858fb3294c773dd7c1370b40867f.png" alt="Image from Gyazo" width="500"/></a></a><br>  
+
+あまり意義が分からないので、成功した場合のみにイベントを発火するようにコードを変更しても良いのではないか。  
+（意図としては、ファイルの読み込みが失敗したことを分かりやすくするため？）
+
+そもそも、失敗する場合というのはどのような場合が想定できるのだろうか。。。  
+
+```js
+// ファイルの読み込みが失敗した場合、何も起こらないような設計としてみた
+
+function previewFileWithId(selector) {
+    const target = this.event.target;
+    const file = target.files[0];
+    const reader  = new FileReader();
+
+    reader.onload = function () {
+        selector.src = reader.result;
+    }
+    if (file) {
+        reader.readAsDataURL(file);
+    }
+}
+```
+
+## SCSSの設定とプリコンパイルの設定
+
+SCSSについて、プロフィール画面は他と設定を変えると都合がよいので、  
+新しく`mypage.scss`を作成し、以下のとおりとする。  
+
 ```scss
 @import 'bootstrap-material-design/dist/css/bootstrap-material-design.css';
+@import 'font-awesome-sprockets';
+@import 'font-awesome';
 
 main {
   padding-top: 50px;
 }
 ```
+
+プリコンパイルするには、以下の`config/initializers/assets.rb`を編集する必要がある。  
+コメントに書かれているとおり、application.jsなどは設定せずとも追加されている。  
+
+よって、今回新しく追加した、`mypage.js`と`mypage.scss`を対象とする。  
+
+憶測で書くが、プリコンパイル前に`mypage.scss`が`mypage.css`に変換されているため、  
+`Rails.application.config.assets.precompile += %w( mypage.js mypage.css )`とする。  
+
+```rb
+# config/initializers/assets.rb
+# 該当箇所のみ記載
+
+# Precompile additional assets.
+# application.js, application.css, and all non-JS/CSS in the app/assets
+# folder are already added.
+Rails.application.config.assets.precompile += %w( mypage.js mypage.css )
+```
+
+##
+
+class Mypage::BaseController < ApplicationController
+  before_action :require_login
+  layout 'mypage'
+end
+
+
+

@@ -24,6 +24,7 @@
 - image_magickを使用して、画像は横幅or縦幅が最大400pxとなるようにリサイズする
   - image_magickとmini_magickの関係性について不明だったが、どうやらmini_magickはimage_magickを使うためのgemであるらしい
   - ざっと見た限り、だいそんさんのコードではmini_magickについて設定するのを忘れているようだったが、難しくはなさそうなので挑戦したい
+- 自分のプロフィール画面の場合、編集画面へのボタンを表示し、アクセスできるようにする
 - 以降の課題でもマイページに諸々追加するのでそれを考慮した設計とする（ルーティングやコントローラやレイアウトファイルなど）
 
 ## コードリーディング
@@ -35,6 +36,10 @@
 ### データベース上での設定
 
 まず、アバター画像を取り扱えるようにするため、usersテーブルにavatarというカラムを追加する。  
+
+```text
+rails g migration AddAvatarToUsers avatar:string
+```
 
 Issue02の復習になるが、保存するのはあくまでファイル名になるので、  
 データ型はStringとなる。このファイル名を活用して、サーバーの保存されている画像のリンクをCarrierwaveで生成させる。  
@@ -170,6 +175,87 @@ namespaceを使って、ディレクトリを分ける方がスマートであ�
 
 今回も、そのようなケースに該当するので、そのような対応が取られている。  
 
+## mypage/accounts_controller.rbの設定
+
+ルーティングの設定を終えたので、コントローラの設定を行う。  
+編集画面しか実装しないので、editアクションとupdateアクションの設定を行えばよい。  
+
+以下のような画面となるので、該当ユーザーのusernameとavatarを操作できればよい。  
+
+<a href="https://gyazo.com/0ecf1fca07bdcf7707a312b7f312b53e"><img src="https://i.gyazo.com/ca20db3999414f800bd56789f163e8de.png" alt="Image from Gyazo" width="500"/></a></a><br>  
+
+`mypage/accounts_controller.rb`のコードは、以下のとおりとなる。  
+
+```rb
+class Mypage::AccountsController < Mypage::BaseController
+  def edit
+    @user = User.find(current_user.id)
+  end
+
+  def update
+    @user = User.find(current_user.id)
+    if @user.update(account_params)
+      redirect_to edit_mypage_account_path, success: 'プロフィールを更新しました'
+    else
+      flash.now['danger'] = 'プロフィールの更新に失敗しました'
+      render :edit
+    end
+  end
+
+  private
+
+  def account_params
+    params.require(:user).permit(:email, :username, :avatar, :avatar_cache)
+  end
+end
+```
+
+なお、updateアクションであるが、`@user = current_user`としてもよさそうだが、  
+あえてしないのは、以下の記事のとおりとのこと。  
+
+- [\(Railsで\)プロフィール更新みたいなやつの注意点 \| けんちゃんくんさんのWeb日記](https://diary.shu-cream.net/2014/09/11/tips-for-current-user.html)
+
+ただ、あまり理解できなかったので、TechEssentialsで質問をしてみた。  
+
+- [Issue 09 プロフィール更新の際の注意点について \| TechEssentials](https://tech-essentials.work/questions/119)
+
+なお、paramsの中身は下記のとおりである。  
+
+```rb
+<ActionController::Parameters {
+  "utf8"=>"✓",
+  "_method"=>"patch",
+  "authenticity_token"=>"E4ZrhzY3kwtvG38yph9+m6QoNlgdYLTHvAOWeD2jUWVHHD/S5ccaECbgwqlPqwbiDrRE7gm1AyYeNFEa02ei5A==",
+  "user"=><ActionController::Parameters {
+    "avatar"=>#<ActionDispatch::Http::UploadedFile:0x00007ff770e85bb0
+                @tempfile=#<Tempfile:/var/folders/79/zgjvw1r57z71ktv5q1s5c6j40000gn/T/RackMultipart20200819-79877-1rvepos.jpg>,
+                @original_filename="20161117_messi2_getty.jpg",
+                @content_type="image/jpeg",
+                @headers="Content-Disposition: form-data; name=\"user[avatar]\"; filename=\"20161117_messi2_getty.jpg\"\r\nContent-Type: image/jpeg\r\n"
+              >,
+    "avatar_cache"=>"",
+    "username"=>"miketa"
+  } permitted: false
+>
+```
+
+emailについてはまだ取り扱っていないが、今後の実装を視野に入れて、account_paramsに組み込んでいるものと思われる。  
+
+avatar_cacheについては、JSの方にも影響がなかったため、あまりその意義について理解していないが、  
+おそらく同様に、今後の実装を視野に入れて組み込んだものと思われる。  
+
+## mypage/base_controller.rbの設定
+
+namespaceを区切ったので、マイページ関係のアクションを実行する際に共通して必要となるコードは、  
+`base_controller.rb`にまとめておくとよい。これは、管理者画面実装の際などによく使われるテクニックである。  
+
+```rb
+class Mypage::BaseController < ApplicationController
+  before_action :require_login
+  layout 'mypage'
+end
+```
+
 ## ビューファイルの実装
 
 続いて、プロフィール編集画面に関係する実装を行なっていく。  
@@ -235,6 +321,7 @@ nav
 /yield部分で読み込まれる
 
 = form_with model: @user, url: mypage_account_path, method: :patch, local: true do |f|
+  / なぜ object: @user ではなく、object: f.object となっているのかよく分からない
   = render 'shared/error_messages', object: f.object
   .form-group
     = f.label :avatar
@@ -247,9 +334,12 @@ nav
   .form-group
     = f.label :username
     = f.text_field :username, class: 'form-control'
-
   = f.submit class: 'btn btn-primary btn-raised'
 ```
+
+残念ながら、`object: f.object`となっている理由が分かっていないので質問してみた。  
+
+- [Issue 09 パーシャルに渡す変数について \| TechEssentials](https://tech-essentials.work/questions/121)
 
 コードを理解するにあたって、以下の記事を参考にした。  
 
@@ -269,7 +359,13 @@ nav
 - [JavaScript FileAPIについて学ぶ \- Qiita](https://qiita.com/kodokunadancer/items/8028d87d8d2bc6c00e69)
 
 ```js
-assets/javascripts/mypage.js
+//assets/javascripts/mypage.js
+
+// 以下にて、必要なJSファイルを読み込む
+//= require jquery3
+//= require popper
+//= require rails-ujs
+//= require bootstrap-material-design/dist/js/bootstrap-material-design.js
 
 function previewFileWithId(selector) {
     // 大まかな流れ
@@ -305,6 +401,7 @@ function previewFileWithId(selector) {
         reader.readAsDataURL(file);
 
     // ファイルがない場合、`selector.src`を空にする
+    // この部分についてコードの意義がよく分からなかったので、TechEssentialsで質問した
     } else {
         selector.src = "";
     }
@@ -353,7 +450,7 @@ main {
 ```
 
 プリコンパイルするには、以下の`config/initializers/assets.rb`を編集する必要がある。  
-コメントに書かれているとおり、application.jsなどは設定せずとも追加されている。  
+コメントに書かれているとおり、application.jsなどは設定せずともプリコンパイルの対象となっている。  
 
 よって、今回新しく追加した、`mypage.js`と`mypage.scss`を対象とする。  
 
@@ -370,12 +467,70 @@ main {
 Rails.application.config.assets.precompile += %w( mypage.js mypage.css )
 ```
 
-##
+## 自分のプロフィール画面の場合、編集画面へのリンクを貼る
 
-class Mypage::BaseController < ApplicationController
-  before_action :require_login
-  layout 'mypage'
-end
+以下のとおり、自分のプロフィール画面の場合、編集画面へのボタンを表示し、  
+編集ページへとアクセスできるよう実装する。  
 
+<a href="https://gyazo.com/0ecf1fca07bdcf7707a312b7f312b53e"><img src="https://i.gyazo.com/b98ef45501a77072bcf126064cab5a05.png" alt="Image from Gyazo" width="500"/></a></a><br>  
 
+コードは、下記のとおりとする。  
 
+```slim
+# users/show.html.slim
+
+.container
+  .row
+    .col-md-10.offset-md-1
+      .card
+        .card-body
+          / ログインしているユーザーのプロフィール画面を開いている場合、プロフィール編集画面へのリンクを表示する
+          / ぼっち演算子を使って、ログインしていない場合であっても例外処理が起きないようにする
+          / ぼっち演算子は「オブジェクト&.メソッド」という形で使う
+          - if current_user&.id == @user.id
+            .text-center.mb-3
+              = link_to 'プロフィール編集', edit_mypage_account_path, class: 'btn btn-raised btn-warning'
+          .text-center.mb-3
+            / とりあえずサンプルのアバターを表示していたが、該当のアイコンを表示するよう変更する
+            / なお、carrierwaveで設定済のため、アバターの設定が行われていない場合、デフォルトのサンプルアバターが表示される
+            = image_tag @user.avatar.url, size: '100x100', class: 'rounded-circle mr-1'
+```
+
+## その他
+
+`image_tag 'profile-placeholder.png'`としていた箇所を変更する。  
+複数のファイルにまたがるため、検索機能を活用していくとよい。  
+
+```rb
+# 以下はあくまで参考例であり、変更内容は各ファイルにおいて微妙に異なる。  
+
+# Before
+= image_tag 'profile-placeholder.png', size: '50x50', class: 'rounded-circle'
+
+# After
+= image_tag current_user.avatar.url, size: '50x50', class: 'rounded-circle mr-1'
+```
+
+また、詳細については記載しないが、indexページの右側に表示されるユーザーの一覧部分において、  
+ログインユーザーのアバターとユーザー名が表示される。そちらにも修正を加え、編集画面へのリンクを貼付する。  
+（コードについては省略する）。  
+
+そして、`config/locales/ja.yml`にアバターを加えておく。  
+
+```yml
+# config/locales/ja.yml
+
+ja:
+  activerecord:
+    models:
+      user: 'ユーザー'
+      post: '投稿'
+      comment: 'コメント'
+    attributes:
+      user:
+        email: 'メールアドレス'
+        password: 'パスワード'
+        password_confirmation: 'パスワード確認'
+        username: 'ユーザー名'
+        avatar: 'アバター'
+```

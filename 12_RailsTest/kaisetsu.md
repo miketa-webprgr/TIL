@@ -462,3 +462,64 @@ gitの知識も必要とする問題が、基本的にはマイグレーショ�
 直接編集するのはもちろんのこと、削除をするのはもってのほかである。  
 
 以上のことから、最後の選択肢が対処法としてよさそうであり、他の方法はあまりよろしくないことが分かる。  
+
+## 問題13
+
+カラムをreference型と指定する具体的なマイグレーションコマンドがあるので、  
+その意味を正しく理解できるか問う問題。  
+
+### 解説 13
+
+以下において具体的なマイグレーションコマンドの事例があるが、  
+その中の一つに全く同じものが掲載されている。  
+
+- [Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html#%E5%8D%98%E7%8B%AC%E3%81%AE%E3%83%9E%E3%82%A4%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B)  
+
+すると、一つ目の選択肢は合っていることが分かる。  
+また、4つ目の選択肢については、`foreign_key: true`が含まれることから、外部キー制約が設定されることがわかる。  
+
+なお、2つ目の選択肢と3つ目の選択肢については誤りである。  
+
+reference形については、このQiita記事が参考になると思う。  
+
+データベース上においてreferenceという型がある訳ではないが、これを使うことで、  
+自動でindexを貼ってくれるし、外部キーとして指定することも簡単である。  
+（referenceが参照という意味なので、そこから覚えていくとよさそう）
+
+- [Railsの外部キー制約とreference型について \- Qiita](https://qiita.com/ryouzi/items/2682e7e8a86fd2b1ae47)
+
+これは、単純にinteger型を指定して追加することとは異なる。  
+
+また、`add_reference :products, :user, foreign_key: true`はproductsテーブルにuser_id  
+という外部キーとなるカラムを追加することを意味するが、外部キーに指定するとnullは許容されなくなる。  
+
+## 問題14
+
+マイグレーションコマンドのup/downメソッドについての説明で正しいものか問う問題。  
+
+### 解説 14
+
+以下を参考にするとよい。  
+
+- [【Ruby on Rails】changeとup・downの使い分けについて \- Qiita](https://qiita.com/tkr_ld/items/f1c0b3bad6a49bd7894a)
+- [migrationでrollback可否でchangeかup/downを使い分ける \- Qiita](https://qiita.com/koni4k/items/294342048cb6d47bcc3f)
+- [Active Record マイグレーション \- Railsガイド](https://railsguides.jp/active_record_migrations.html#up-down%E3%83%A1%E3%82%BD%E3%83%83%E3%83%89%E3%82%92%E4%BD%BF%E3%81%86)
+
+読むとわかるが、基本的にはchangeメソッドにてmigrationファイルを記述するのが一般的である。  
+ただ、一部の操作はchangeメソッドで戻すことができないので、操作についてup、戻す方法についてdownで書く必要がある。  
+
+以上が分かれば、1つ目と2つ目の選択肢が正しいことがわかる。  
+
+3つ目の選択肢については、changeメソッドで取り消せるため正しい。  
+
+ただし、4つ目の選択肢については、upとdownについて書く必要がある。  
+以下のように書いた場合、rollback時に戻すべきデータ型がtext型だと分からないからだ。  
+
+```rb
+class マイグレーション名 < ActiveRecord::Migration[5.2]
+  def change
+      # text型からstring型へ変更
+      change_column :hoges, :name, :string
+  end
+end
+```

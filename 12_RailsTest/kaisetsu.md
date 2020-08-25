@@ -523,3 +523,43 @@ class マイグレーション名 < ActiveRecord::Migration[5.2]
   end
 end
 ```
+
+## 問題15
+
+マイグレーションについての説明で正しいものはどれか問う問題。  
+全般的な理解を問う問題。  
+
+### 解説 15
+
+例えば、Railsガイドに記載されている例を取り上げるが、以下のコマンドを打つと、  
+下記のようなマイグレーションファイルが作成される。  
+
+```text
+rails generate migration AddUserRefToProducts user:references
+```
+
+```rb
+class AddUserRefToProducts < ActiveRecord::Migration[5.0]
+  def change
+    add_reference :products, :user, foreign_key: true
+  end
+end
+```
+
+以上の例を見て分かるとおり、モデル名は複数形にする。  
+なので、第一の選択肢は正解である。  
+
+なお、`add_reference`であるが、外部キー制約を使うときだけでなく、indexを貼る時やpolymorphic関連と  
+するような時に使うものであり、`add_foreign_key`メソッドを使っても外部キーを作成することができる。  
+
+- [ActiveRecord::ConnectionAdapters::SchemaStatements](https://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/SchemaStatements.html#method-i-add_reference)
+- [Railsの外部キー制約とreference型について \- Qiita](https://qiita.com/ryouzi/items/2682e7e8a86fd2b1ae47)
+
+よって、reference型を使う方が一般的ではあると思われるが、推奨されるまでには至らない。  
+２つ目の選択肢は誤りである。  
+
+また、例に挙げたマイグレーションコマンドのとおり、reference型を使う時は`user:references`  
+とするので、３つ目の選択肢は誤りである。  
+
+なお、モデル側でのバリデーションとデータベース上の制約というのは別物であり、特に事情がないのであれば、  
+データベース上でも制約を合わせてかける方が整合性を保つ上でより良い選択となるので、４つ目の選択肢も誤りである。  

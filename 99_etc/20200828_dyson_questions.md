@@ -2,17 +2,23 @@
 
 ## メモ
 
-- [ポリモーフィック関連や単一テーブル継承などについてまとめたノート](10_issue_note_polymorphic.md)
+- [ポリモーフィック関連や単一テーブル継承などについてまとめたノート](https://github.com/miketa-webprgr/TIL/blob/master/11_Rails_Intensive_Training/10_issue_note_polymorphic.md)
 
 ## 質問１
 
 - ポリモーフィック関連について（概要 - 知らない方もいるので）
+  - Railsガイドを参照すると良さそう
+    - [2.9 ポリモーフィック関連付け --- Active Record の関連付け \- Railsガイド](https://railsguides.jp/association_basics.html#%E3%83%9D%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%95%E3%82%A3%E3%83%83%E3%82%AF%E9%96%A2%E9%80%A3%E4%BB%98%E3%81%91)
+  - 複数のモデルに紐づけるようなモデルを実装したい場合に使うと便利  
+    - 事例：productsテーブルとemployeeテーブルがあり、それぞれにpicturesテーブルを関連付けたい場合など
 
 ## 質問２
 
 - ポリモーフィック関連のメリット・デメリット（中間テーブルなどを使った実装なども可能）
+  - そもそもポリモーフィック関連って使う必要があるのか
+  - 色々なテーブル設計の方法論がある
+    - [複数のテーブルに対して多対一で紐づくテーブルの設計アプローチ｜スパイスファクトリー株式会社](https://spice-factory.co.jp/development/has-and-belongs-to-many-table/)
 - ポリモーフィックはアンチパターンという話が出てきた
-  - [複数のテーブルに対して多対一で紐づくテーブルの設計アプローチ｜スパイスファクトリー株式会社](https://spice-factory.co.jp/development/has-and-belongs-to-many-table/)
   - [SQLアンチパターンを読んで （ポリモーフィック関連について） \| MotiMoti\+\+](https://blog.motimotilab.com/?p=207)
 
 ## 質問３

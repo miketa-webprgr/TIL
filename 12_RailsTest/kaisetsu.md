@@ -1,20 +1,15 @@
 # Railsテストに対する解説
 
-## 問題の掲載先
+## 問題 1
 
-以下を参照すること。  
-なお、TechEssentialsにログインする必要がある。  
+ActiveRecordについて正しい記述はどれか
 
-https://tech-essentials.work/courses/7/take_quiz/new
+- バリデーション(検証)もActiveRecordの機能の一つである
+- データベースをオブジェクト指向スタイルで操作するものである
+- RailsのモデルはActiveRecordを継承している
+- Railsにおける基本的なルールとして、モデル名は複数形、テーブル名は単数形とする必要がある
 
-なお、問題の作成にあたっては、Railsガイドを参考にしたとのことなので、  
-基本的にはそちらを参照すれば詳しい情報を得ることができる。  
-
-## 問題1
-
-ActiveRecordについて正しい記述はどれか問うもの。  
-
-### 問題1: 解説ActiveRecordの機能
+### ActiveRecordの機能
 
 Railsガイドに書いてある。  
 ORM(Object-Relational Mapping)というものらしい。  
@@ -33,7 +28,7 @@ ActiveRecordの機能は、以下に書いてあるとおり。
 
 - [ORMフレームワークとしてのActive Record](https://railsguides.jp/active_record_basics.html#orm%E3%83%95%E3%83%AC%E3%83%BC%E3%83%A0%E3%83%AF%E3%83%BC%E3%82%AF%E3%81%A8%E3%81%97%E3%81%A6%E3%81%AEactive-record)  
 
-### 問題1: RailsのモデルはActiveRecordを継承している
+### RailsのモデルはActiveRecordを継承している
 
 開発しているRailsのアプリを開き、適当なモデルのファイルを開いてみよう。  
 こうなっているはず。継承してい流ことが分かる。  
@@ -43,7 +38,7 @@ class Product < ApplicationRecord
 end
 ```
 
-### 問題1: Railsにおける命名ルール
+### Railsにおける命名ルール
 
 - モデルのクラス - 単数形、語頭を大文字にする (例: BookClub)
 - データベースのテーブル - 複数形、語はアンダースコアで区切られる (例: book_clubs)
@@ -53,12 +48,16 @@ end
 
 - [命名ルール](https://railsguides.jp/active_record_basics.html#%E5%91%BD%E5%90%8D%E3%83%AB%E3%83%BC%E3%83%AB)  
 
-## 問題2
+## 問題 2
 
-モデルについて正しい記述はどれか問うもの。  
-基本的には、問題１で解説した内容でカバーしているため、そちらを参照するとよい。  
+モデルについて正しい記述はどれか
 
-### 問題2: ケバブケース・キャメルケース・スネークケース
+- ActiveRecordを継承している
+- 複数形で定義する
+- 対応するテーブルは単数形で定義する
+- クラス名はケバブケースで書く
+
+### ケバブケース・キャメルケース・スネークケース
 
 | 名称         | 用例       | 主な言語                |                名称の由来                |
 | ----------- | ---------- | --------------------- | --------------------------------------- |
@@ -69,13 +68,26 @@ end
 気合で覚えると大変。以下のように覚えよう。  
 多分、RubyやRailsでケバブケースって使わない。  
 
-モデルはキャメルケースで単数系。  
+### 解説 2
+
+基本的には、問題１で解説した内容でカバーしている。  
+
+繰り返しになるが、モデルはキャメルケースで単数系。  
 例えば、`QuizProblem`のようにすること。  
 
 テーブルはスネークケースで複数形。  
 例えば、`quiz_problems`のようにすること。  
 
-## 問題3
+## 問題 3
+
+以下のうち正しい記述はどれか
+
+- Railsではデータベースのテーブル名を探索するときにモデルのクラス名を複数形にした名前で探索する
+- クラス名はケバブケースで書く
+- 外部キーはテーブル名の複数形_idで定義する
+- 主キーはオートインクリメントされる
+
+### 解説 3
 
 基本的には、問題１や問題２で解説したとおり。  
 以下、補足を記載する。  
@@ -121,8 +133,28 @@ idの自動採番のことを言うらしい。
 
 ## 問題 4
 
-CRUDに関するメソッドについて問うもの。  
-具体的にはcreate, newなどのメソッド。  
+以下のうち文法的に正しいものを選べ。  
+
+```rb
+User.create(name: "David", occupation: "Code Artist")
+```
+
+```rb
+user = User.new
+user.name = "David"
+user.occupation = "Code Artist"
+user.save
+```
+
+```rb
+user = User.new(name: "David", occupation: "Code Artist")
+user.save
+```
+
+```rb
+user = User.new(name="David", occupation="Code Artist")
+user.save
+```
 
 ### 解説 4
 
@@ -143,7 +175,24 @@ user = User.new(:name => "David", :occupation => "Code Artist")
 
 ## 問題 5
 
-ActiveRecordのメソッドについて問うもの。  
+以下のうちエラーになるものはどれか
+
+```rb
+users = User.where(name: "taro")
+users.name
+```
+
+```rb
+user = User.first
+```
+
+```rb
+david = User.find(name: 'David')
+```
+
+```rb
+users = User.where(name = 'David', occupation = 'Code Artist')
+```
 
 ### 解説 5
 
@@ -192,8 +241,28 @@ ActiveRecordについて、Railsガイドに解説が書いてある。
 
 ## 問題 6
 
-問題5の類似問題。  
-update関連のメソッドについて問うもの。  
+名前を更新する処理として正しいものはどれか
+
+```rb
+user = User.find_by(name: 'David')
+user.name = 'Dave'
+user.save
+```
+
+```rb
+User.find_by(name: 'David').update(name: 'Dave')
+```
+
+```rb
+user = User.find(name: 'David')
+user.name = 'Dave'
+user.save
+```
+
+```rb
+user = User.find_by(name: 'David')
+user.update(name: 'Dave')
+```
 
 ### 解説 6
 
@@ -214,8 +283,12 @@ id以外のものである場合は例外処理となる。（例外処理にし
 
 ## 問題 7
 
-問題5の類似問題。  
-destroy系のメソッドについて問うもの。  
+ユーザーを全削除する記述として正しいものはどれか
+
+- `User.all.destroy`
+- `User.destroy.all`
+- `User.destroy_all`
+- `User.delete!`
 
 ### 解説 7
 
@@ -261,7 +334,34 @@ Railsガイドに書いてある。
 
 ## 問題 8
 
-validationに関する問題。  
+以下のような定義がある場合の挙動として正しいものはどれか
+
+```rb
+# このようなクラスを前提とする
+class User < ApplicationRecord
+  validates :name, presence: true
+end
+```
+
+```rb
+user = User.new
+user.save  # => ActiveRecord::RecordInvalid: Validation failed: Name can't be blank
+```
+
+```rb
+user = User.new
+user.save! # => false
+```
+
+```rb
+user = User.new
+user.name = "DHH"
+user.save # => true
+```
+
+```rb
+User.create(name: "DHH") # =>  #<User:0x00007f7f8a4a3cb8 id: ~~~
+```
 
 ### 解説 8
 
@@ -283,8 +383,12 @@ Railsガイドに書いてある。
 
 ## 問題 9
 
-マイグレーションファイルに関する問題。  
-マイグレーションコマンドについて問うものとなっている。  
+マイグレーションファイルについて正しい記述はどれか
+
+- マイグレーションファイルを作りdb:migrateを行なった。その後マイグレーションファイルに誤りを見つけたので一部修正し再度db:migrateを行なった。
+- マイグレーションファイルを1から全て再実行するためにdb:migrateを実行した。
+- マイグレーションファイルを1から全て再実行するためにdb:resetを実行した。
+- マイグレーションファイルを1から全て実行するためにdb:migrate:resetをした。
 
 ### 解説 9
 
@@ -363,8 +467,29 @@ schema.rbを活用して再構築するものなので、注意すること。
 
 ## 問題 10
 
-以下のマイグレーションファイルについての説明で正しいものはどれか尋ねる問題。  
-具体的なマイグレーションファイルのコードがあるので、その中身の理解度を問うている。  
+以下のマイグレーションファイルについての説明で正しいものはどれか
+
+```rb
+class CreateProducts < ActiveRecord::Migration[5.0]
+  def change
+    create_table :products do |t|
+      t.string :name, null: false
+      t.string :sku, null: false
+      t.text :description
+      t.references :user, foreign_key: true
+
+      t.timestamps
+
+      add_index :products, :sku, unique: true
+    end
+  end
+end
+```
+
+- userというカラムが作られてそこへユーザーレコードのidが格納される
+- skuは一意でなければならない。
+- （制約は一旦置いておいて）rails g model product name:string sku:string description:text user:referencesというコマンドでこのマイグレーションファイルが自動的に作られる。
+- user_idには外部キー制約がついているのでnullを入れることはできない
 
 ### 解説 10
 
@@ -428,8 +553,25 @@ add_index(table_name, column_name, options = {})
 
 ## 問題11
 
-以下のマイグレーションファイルを生成するために打つべきコマンドはどれか問う問題。  
-ターミナルに具体的に何を入力するか問うている。  
+以下のマイグレーションファイルを生成するために打つべきコマンドはどれか
+
+```rb
+class CreateProducts < ActiveRecord::Migration[5.0]
+  def change
+    create_table :products do |t|
+      t.string :name
+      t.text :description
+
+      t.timestamps
+    end
+  end
+end
+```
+
+- rails generate model Product name:string description:text
+- rails g model Product name:string description:text
+- rails generate model product string:name text:description
+- rails generate model products name:string description:text
 
 ### 解説 11
 
@@ -442,7 +584,12 @@ add_index(table_name, column_name, options = {})
 ## 問題12
 
 すでにmasterブランチにマージされて本番リリースがされているマイグレーションファイルに誤りを見つけました。  
-どう対処するのが良さそう？（マイグレーションファイルをどうすればよいか問う問題）  
+どう対処するのが良さそう？  
+
+- 対象のマイグレーションファイルを削除して新しいマイグレーションファイルを作成してコミットする。
+- 対象のマイグレーションファイルを削除するのはまずいので誤りのあるところだけ一部修正してコミットする。
+- gitのrevertコマンドを実行してコミットを打ち消すコミットをする。
+- 対象のマイグレーションを打ち消すマイグレーションファイルを作りコミットする。
 
 ### 解説 12
 
@@ -465,8 +612,22 @@ gitの知識も必要とする問題が、基本的にはマイグレーショ�
 
 ## 問題13
 
-カラムをreference型と指定する具体的なマイグレーションコマンドがあるので、  
-その意味を正しく理解できるか問う問題。  
+以下のコマンドについての説明で正しいものはどれか。  
+`rails generate migration AddUserRefToProducts user:references`  
+
+- 以下のマイグレーションファイルが作られる
+
+```rb
+class AddUserRefToProducts < ActiveRecord::Migration[5.0]
+  def change
+    add_reference :products, :user, foreign_key: true
+  end
+end
+```
+
+- references型とinteger型は同義である
+- user_idカラムにnullは許容されなくなる
+- 外部キー制約が設定される
 
 ### 解説 13
 
@@ -495,7 +656,12 @@ reference形については、このQiita記事が参考になると思う。
 
 ## 問題14
 
-マイグレーションコマンドのup/downメソッドについての説明で正しいものか問う問題。  
+up/downメソッドについての説明で正しいものはどれか。
+
+- マイグレーションが逆転不可能な場合に利用するものである。
+- upメソッドにはスキーマに対する変換方法を記述し、downメソッドにはupメソッドによって行われた変換を逆転する方法を記述する。
+-「テーブルの作成」を意味するマイグレーションはchangeメソッドでは取り消せない
+-「カラムの型を変える」マイグレーションはchangeメソッドでは取り消せない
 
 ### 解説 14
 
@@ -526,8 +692,12 @@ end
 
 ## 問題15
 
-マイグレーションについての説明で正しいものはどれか問う問題。  
-全般的な理解を問う問題。  
+マイグレーションについての説明で正しいものはどれか
+
+- モデル名は複数形にする
+- 外部キーを作成する場合は特別な理由がない限りintegerではなくreferences型を使うことが推奨される
+- references型を使う時はuser_id:referencesのように書く
+- モデル側でpresence: trueを書いておけばマイグレーションファイルにnull: falseを書かなくて良い
 
 ### 解説 15
 
@@ -563,3 +733,50 @@ end
 
 なお、モデル側でのバリデーションとデータベース上の制約というのは別物であり、特に事情がないのであれば、  
 データベース上でも制約を合わせてかける方が整合性を保つ上でより良い選択となるので、４つ目の選択肢も誤りである。  
+
+## 問題16
+
+以下のようなPersonモデルがある時の挙動として正しいものはどれか。  
+
+```rb
+class Person < ApplicationRecord
+  validates :name, presence: true
+end
+```
+
+```rb
+>> p = Person.new(name: "John Doe")
+=> #<Person id: nil, name: "John Doe", created_at: nil, updated_at: nil>
+>> p.new_record?
+=> true
+>> p.save
+=> true
+>> p.new_record?
+=> false
+```
+
+```rb
+>> p = Person.new(name: "John Doe")
+=> #<Person id: nil, name: "John Doe", created_at: nil, updated_at: nil>
+>> p.valid?
+=> true
+```
+
+```rb
+>> p = Person.new(name: "John Doe")
+=> #<Person id: nil, name: "John Doe", created_at: nil, updated_at: nil>
+>> p.invalid?
+=> true
+```
+
+```rb
+>> p = Person.new
+=> #<Person id: nil, name: "John Doe", created_at: nil, updated_at: nil>
+>> p.save
+=> # 例外
+```
+
+### 解説 16
+
+
+

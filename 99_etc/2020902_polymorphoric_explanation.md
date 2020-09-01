@@ -6,6 +6,8 @@ Railsのポリモーフィック関連付けの機能を使うと、Modelの操�
 おお、これは便利だと思ってポリモーフィック関連付けをしたモデルを活用した練習アプリを  
 作ってみたのですが、意外と考えることが多かったので、その思考の過程を頑張ってまとめてみました。  
 
+- [PolymorphicPracticApp: ポリモーフィック関連の練習のためのアプリ](https://github.com/miketa-webprgr/polymorphic-practiceapp)
+
 ## ポリモーフィック関連付けってどうやるか分かっていますか？
 
 その前にアソシエーションって分かっていますか？  
@@ -159,11 +161,11 @@ Playerモデル（例：メッシ選手）とManagerモデル（例：グアル�
 
 では、順を追って対応方法を考えてみましょう。  
 
-まず、`players/tag_controllers.rb`と`managers/tag_controller.rb`を作成してしまい、  
+まず、`players/tags_controllers.rb`と`managers/tags_controller.rb`を作成してしまい、  
 クライアント側のリクエスト先を適切に分けてあげればよさそうです。  
 
 Playerに関するタグを作成したい場合、Submitボタン的なものを押した時、  
-player/tag_controller.rbで処理させましょう。  
+`player/tags_controller.rb`で処理させましょう。  
 
 そのため、ルーティングを適切に設定してください。  
 結論からいいますが、こうしてください。  
@@ -467,7 +469,7 @@ resources :tags
 ```
 
 非常にまどろっこしいですが、まず`taggable_params`を使って、`Player.find(@player.id)`した後に、  
-`@player.tags.build(tag_params`しているということです。  
+`@player.tags.build(tag_params)`しているということです。  
 
 ## クライアントのリクエスト先のURLを活用して、`taggable_type`と`taggable_id`を取得する方法
 
@@ -526,3 +528,10 @@ private
 コントローラが分かれていると`require ~`とすれば簡単に設定できます。  
 
 ただ、コントローラが１つしかないと、ロジックを書かなくちゃいけないので非常に面倒です。  
+
+また、playerに紐づくtagsを表示させたい場合やmanagerに紐づくtagsを表示させたい  
+indexページを作る場合、コントローラが分かれていない場合、特殊な処理をしないと対応できません。  
+
+１つのindexアクションで対応するためには、フォームから隠しパラメータを送ってもらい、  
+そのパラメータ元にロジックを書くという対応などをしないといけないのですが、  
+ファットコントローラ・エラーの温床になり、色々と苦しくなってきます。（ここに権限設定も行うと最悪です）  

@@ -207,8 +207,29 @@ end
 ## ルーティングの設定
 
 通知一覧を表示させるため、`routes.rb`に以下を追記する。  
-以下の記事を見る限り、ルーティングしてネストするのが
 
+だいそんさんのコードを見ると、`activities_controller.rb`をmypageディレクトリ配下と  
+mypageディレクトリ配下ではない箇所にそれぞれ作るように設定しているが、この理由がよく分からなかった。  
+
+最初は、mypageディレクトリ下におくと、`base_controller.rb`を継承するような設計になるのが自然であるため、  
+そこに何か理由があるのかと思ったが、readアクションについては`base_controller`を継承しなくとも違いはない  
+ようだったので、mypageディレクトリ下にまとめることにした。  
+
+TechEssentials上での質問は、以下のとおり。  
+
+- [Issue 10 ルーティングの設定とパーシャルの重複？について \| TechEssentials](https://tech-essentials.work/questions/131)
+
+よって、ルーティングについては、以下のとおり設定した。  
+
+```rb
+  namespace :mypage do
+    resource :account, only: %i[edit update]
+    # 以下に
+    resources :activities, only: %i[index]
+      resource 
+  end
+
+以下の記事を見る限り、ルーティングしてネストするのが
 
 indexアクションのみがあればよいため、以下のとおりとする。  
 （今後、

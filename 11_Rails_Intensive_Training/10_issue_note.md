@@ -16,7 +16,7 @@
 
 <a href="https://gyazo.com/0ecf1fca07bdcf7707a312b7f312b53e"><img src="https://i.gyazo.com/b3c887680a238e754ef4f23a75ff6b8e.gif" alt="Image from Gyazo" width="500"/></a></a><br>  
 
-また、プロフィール編集画面の方では、下記のとおり表示されます。  
+また、マイページの方では、下記のとおり表示されます。  
 
 <a href="https://gyazo.com/0ecf1fca07bdcf7707a312b7f312b53e"><img src="https://i.gyazo.com/be277b69646cf730527cfbfbc8a0c8e9.png" alt="Image from Gyazo" width="500"/></a></a><br>  
 
@@ -39,44 +39,58 @@
 - 既読とするタイミングは各通知そのものをクリックした時とします。
 - 不自然ではありますが通知の元となったリソースが削除された際には通知自体も削除する仕様とします。
 
+## 求められていないけど、勝手にやった実装について
+
+- 以前に勝手に実装したコメントのNGワードフィルター機能のリファクタ
+  - コントローラにロジックがあるのが気持ち悪くて耐えられなかったのでモデルに寄せた
+- だいそんさんのコードでは、ActivityモデルとしていたがNotificationモデルとした
+  - 紐付け先のテーブルを特定するカラム名はsubjectではなく、notifiable_typeとした
+  - 紐付け先のレコードのidを特定するカラム名はsubject_idではなく、notifiable_idとした
+- だいそんさんのアプリでは、activitiesテーブルにaction_typeというカラムが設けられていた
+  - このカラムは不要であり、紐付け先のテーブルを特定するnotifiable_typeを使ったロジックで対応可能
+  - Notificationモデルに独自メソッドを設けることで対応した
+- だいそんさんのコードだとダックタイピングまでは行われていなかったので、ダックタイピングにチャレンジした
+
 ## 分からない単語・概念等の一覧
 
-- [ポリモーフィック関連とは](10_issue_note_polymorphic.md)
+- ポリモーフィック関連付け
+- ダックタイピング
+- localizeメソッド（lメソッド）
 
-## コードリーディング
+## ポリモーフィック関連とは
 
-基本的にはだいそんさんの作成したアプリをコードリーディングし、  
-従来どおり、それに倣う形で実装を行うが、以下の点について違う形で実装する。  
-
-- ActivityモデルをNoitificationモデルとする
-- enumを使わず、ダックタイピングを利用する
-
-なお、以上については該当の箇所で詳細を説明していく。  
-
-## ポリモーフィック関連を使った実装方針
-
-ポリモーフィック関連については既に以下のとおりノートでまとめているが、  
-ただ、今回のケースにおいて、どのような実装を行えばよいのだろうか。  
+ポリモーフィック関連については以下のとおりノートでまとめてみた。  
 
 - [ポリモーフィック関連とは](10_issue_note_polymorphic.md)
 
-記載のとおり、ポリモーフィック関連とは、複数のモデルに対して共通のモデル紐づけるような場合に使用する。  
+なお、ポリモーフィック関連は便利な手法ではあるが、ポリモーフィック関連を使わずとも、  
+同じような機能を実装することは可能であるので、押さえておくとよい。
+
+- [複数のテーブルに対して多対一で紐づくテーブルの設計アプローチ｜スパイスファクトリー株式会社](https://spice-factory.co.jp/development/has-and-belongs-to-many-table/
+
+## テーブル設計について
+
+今回のケースにおいて、どのような実装を行えばよいのだろうか。  
+
+ポリモーフィック関連は、複数のモデルに対して共通のモデル紐づけるような場合に使用する。  
+
 今回であれば、フォローされた・いいねされた・コメントがあった場合にユーザーに通知を届けるため、  
 `Relationship`・`Like`・`Comment`のモデルに対して、共通のモデルを紐づける。  
 
-だいそんさんのコードにおいて、ポリモーフィック関連とするモデル名は`Activity`とされているが、  
-今回追加するのは通知機能であるため、`Notification`モデルを追加することとしたい。  
+だいそんさんのコードにおいては、ポリモーフィック関連とするモデル名が`Activity`となっているが、  
+今回追加するのは通知機能であるため、`Notification`モデルを追加することとする。  
 
-よって、テーブル設計は下記のとおりとする。  
+テーブル設計は下記のとおりとなる。  
 
 <img src="10_issue_note_polymorphic_tables.png" width=800 border="1"><br>
 
-なお、ポリモーフィック関連のノート内で既に触れているが、このような関連付けだけでなく、  
-中間テーブルを使ったテーブル設計などでも実装可能である。詳細についてはこちらを参照すること。  
+misakiさんが各テーブルの関係性をまとめた図（力作！！！）を作っていたので、参考にした。  
 
-- [複数のテーブルに対して多対一で紐づくテーブルの設計アプローチ｜スパイスファクトリー株式会社](https://spice-factory.co.jp/development/has-and-belongs-to-many-table/)
+- [10 通知機能の実装 by misaki\-kawaguchi · Pull Request \#12 · misaki\-kawaguchi/insta\_clone](https://github.com/misaki-kawaguchi/insta_clone/pull/12)
 
-また、だいそんさんのコードにおいては、`action_type`というカラムを設け、こちらを`enumerable`としている。  
+## notificationsテーブルの`action_type`カラムは作らない
+
+だいそんさんのコードにおいては、`action_type`というカラムを設け、こちらを`enumerable`としている。  
 
 ```rb
 enum action_type: { commented_to_own_post: 0, liked_to_own_post: 1, followed_me: 2 }
@@ -87,16 +101,9 @@ enum action_type: { commented_to_own_post: 0, liked_to_own_post: 1, followed_me:
 （例えば、`subject_type`がlikesであれば、必然的に`action_type`は`liked_to_own_post: 1`になる）  
 
 そこで、今回の実装においては、`action_type`に当たるようなカラムは設けない形で、自分なりの実装  
-を行ってみたいと思う。だいそんさんのコードにおいては、action_typeの値をrenderするパーシャルのファイル名  
+を行ってみたいと思う。だいそんさんのコードにおいては、`action_type`の値をrenderするパーシャルのファイル名  
 とうまく連携させることで、コードを短く書く工夫をしているが、おそらく違う形でも出来るのではないかと思われる。  
-
-また、モデル間の関連付けについては、Railsガイドを参考にしたい。  
-
-- [Active Record の関連付け \- Railsガイド](https://railsguides.jp/association_basics.html#%E3%83%9D%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%95%E3%82%A3%E3%83%83%E3%82%AF%E9%96%A2%E9%80%A3%E4%BB%98%E3%81%91)
-
-あと、misakiさんが各テーブルの関係性をまとめた図（力作！！！）を作っていたので、参考にした。  
-
-- [10 通知機能の実装 by misaki\-kawaguchi · Pull Request \#12 · misaki\-kawaguchi/insta\_clone](https://github.com/misaki-kawaguchi/insta_clone/pull/12)
+（結果として、Notificationモデルに独自メソッドを実装する形で解決した）  
 
 ## マイグレーションファイルの作成 + `db:migrate`
 
@@ -412,7 +419,7 @@ Notificationモデルにて、独自メソッドを下記のとおり実装す�
 # Notification.rb
 # ダックタイピングで後ほど綺麗に整える
 
-def call_appropiate_paritial
+def call_appropiate_partial
   puts "commented_to_own_post" if notifiable_type == "Comment"
   puts "liked_to_own_post" if notifiable_type == "Like"
   puts "followed_me" if notifiable_type == "Like"
@@ -510,11 +517,294 @@ ja:
       short: "%m/%d %H:%M"
 ```
 
+## reads_controller.rbを作成する
 
-- マイグレート
-- polymorphicな関連付けを行う
-  - 状況を整理する
-  - railsガイドを参考にする
-  - [Active Record の関連付け \- Railsガイド](https://railsguides.jp/association_basics.html#%E3%83%9D%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%95%E3%82%A3%E3%83%83%E3%82%AF%E9%96%A2%E9%80%A3%E4%BB%98%E3%81%91)
-  - [If use enum for polymorphic\_type, polymorphic associations cannot work well · Issue \#17844 · rails/rails](https://github.com/rails/rails/issues/17844)
-  - 
+ヘッダーに表示されるハートのボタンを押すと、通知が表示されるよう一通りのパーシャルを作り終えた。  
+ただ、この時点ではクリックをしても、link先として指定した`notification_read_path(notification)`がない。  
+
+そこで、受け入れ先となる`reads_controller.rb`を作成し、そちらのcreateアクションにおいて、  
+以下のロジックを実装していく。  
+
+1. コールバック関数にて作成されたNotificationオブジェクトのreadというresouceを作成する
+2. Notificationオブジェクトの紐付き先に合わせて、適切なパスへとredirectさせる
+
+```rb
+# reads_controller.rb
+
+class ReadsController < ApplicationController
+  # 念のため、ログインしていないユーザーが既読にしないよう制限しておく
+  before_action :require_login, only: %i[create]
+
+  def create
+    @notification = Notification.find(params[:notification_id])
+    # enum設定をしたので、read!メソッドでreadカラムをreadに書き換えることができる
+    @notification.read! if @notification.unread?
+    # appropiate_pathメソッドはモデルで実装する
+    redirect_to @notification.appropiate_path
+  end
+end
+```
+
+appropiate_pathメソッドであるが、以下のとおりとした。  
+
+なお、シンボルの方が処理速度が早いらしいので、そこはだいそんさんに倣って、  
+ダックタイピングをする際に合わせてリファクタリングする。  
+
+```rb
+  # Notification.rbに追記した部分のみ記載
+
+  # URLヘルパーを使うために導入
+  include Rails.application.routes.url_helpers
+
+  # 紐付き先のモデルのshowアクションにredirectさせる場合、polymorphic_pathが使える
+  # 今回の場合、コメントした・いいねした投稿のshowアクション、フォローしてくれたユーザーのshowアクションに
+  # redirectする必要があるので、モデルで独自メソッドを実装する
+  # こちらも、ダックタイピングを使って後ほど綺麗に整える
+  def appropiate_path
+    case self.notifiable_type
+    when "Comment"
+      post_path(self.notifiable.post, anchor: "comment-#{notifiable.id}")
+    when "Like"
+      post_path(self.notifiable.post)
+    when "Relationship"
+      user_path(self.notifiable.follower)
+    end
+  end
+```
+
+## SCSSを適用する
+
+既読となった場合、CSSを適用させて背景色を変更する。  
+また、体裁を整えるため、その他の設定も行う。  
+
+マイページでも使いまわせるよう、`application.scss`に書くのではなく、  
+`header.scss`にコードを書き、そのscssをimportする形で対応する。  
+
+```scss
+// application.scss
+
+@import 'header';
+```
+
+```scss
+// _header.scss
+
+#header-notifications {
+  width: 400px;
+  .dropdown-item {
+    max-width: initial;
+    font-size: 12px;
+  }
+
+  .read {
+    background: #f1f1f1;
+  }
+}
+```
+
+## マイページ配下に通知一覧ページを作成する
+
+これまで、ヘッダーに関する部分を作成してきたが、続いてマイページで表示する通知一覧を作成する。  
+まず、マイページのメニュー画面にて、通知一覧へのリンクを作成する。  
+
+<a href="https://gyazo.com/0ecf1fca07bdcf7707a312b7f312b53e"><img src="https://i.gyazo.com/be277b69646cf730527cfbfbc8a0c8e9.png" alt="Image from Gyazo" width="500"/></a></a><br>  
+
+```slim
+/ app/views/mypage/shared/_sidebar.html.slim
+
+nav
+  ul.list-unstyled
+    li
+      = link_to 'プロフィール編集', edit_mypage_account_path
+      hr
+
+    / 以下を追加
+    li
+      = link_to '通知一覧', mypage_notifications_path
+      hr
+```
+
+続いて、通知一覧を表示させるため、モデルからビューにデータを渡すためのコントローラを作成する。　　
+なお、マイページに関するものであるため、Mypage::BaseControllerを継承させる。  
+
+```rb
+class Mypage::NotificationsController < Mypage::BaseController
+  before_action :require_login, only: %i[index]
+
+  def index
+    # kaminariのメソッドを使い、10件以上の場合はページネーションさせる
+    @notifications = current_user.notifications.order(created_at: :desc).page(params[:page]).per(10)
+  end
+end
+```
+
+`@notifications`を受け取るビューファイルを作成する。  
+
+```slim
+/ mypage/notifications/index.html.slim
+
+- if @notifications.present?
+  - @notifications.each do |notification|
+    = render "shared/#{notification.call_appropiate_partial}", notification: notification
+  = paginate @notifications
+
+- else
+  .text-center
+    | お知らせはありません
+```
+
+CSSも忘れてず適用させる。  
+
+```scss
+// mypage.scss
+
+@import 'header';
+
+.read {
+  background: #f1f1f1;
+}
+```
+
+## ダックタイピングでNotificationモデルのメソッドをリファクタする
+
+ポリモーフィック関連付けを使った場合、caseを使うのはアンチパターンらしい。  
+ということで、以下のようなダックタイピングを使ってみた。  
+
+モジュールを使って型を明示するのがベストプラクティスとなりつつあるらしいので、  
+ダックタイピングを終えた後に、その作業も行う。  
+
+ダックタイピングの事例をいくつか載せていたので、この作業では以下の記事が一番  
+参考になった。ゆっくりとコードを追っていけば、チェリー本のクラスやメソッドなど  
+の知識程度があれば、その仕組みを理解することができる。　 
+
+- [【リファクタリング】こんなコードはイヤなので一刻も早く綺麗にしたい \- Qiita](https://qiita.com/yu-croco/items/36a891af2e7e7ab564b4)
+
+さて、リファクタ前のNotificationモデルのメソッドであるが、下記のとおりである。  
+
+```rb
+# Notification.rbの独自メソッド
+
+  # URLヘルパーを使うために導入
+  include Rails.application.routes.url_helpers
+
+  def call_appropiate_partial
+    case self.notifiable_type
+    when "Comment"
+      "commented_to_own_post"
+    when "Like"
+      "liked_to_own_post"
+    when "Relationship"
+      "followed_me"
+    end
+  end
+
+  def appropiate_path
+    case self.notifiable_type
+    when "Comment"
+      post_path(self.notifiable.post, anchor: "comment-#{notifiable.id}")
+    when "Like"
+      post_path(self.notifiable.post)
+    when "Relationship"
+      user_path(self.notifiable.follower)
+    end
+  end
+```
+
+以上を下記のとおり、リファクタする。  
+
+`include Rails.application.routes.url_helpers`を`application.rb`に書く方法もあったが、  
+影響のないモデルにまで作用するのはあまり好ましくない気がしたので、とりあえず３回同じコードを書いている。  
+
+```rb
+# Notification.rbの独自メソッド（リファクタ後）
+
+  def call_appropiate_partial
+    notifiable.partial_name
+  end
+
+  def appropiate_path
+    notifiable.resource_path
+  end
+```
+
+```rb
+# Comment.rb
+
+  # URLヘルパーを使うために導入
+  include Rails.application.routes.url_helpers
+
+  def partial_name
+    'commented_to_own_post'
+  end
+
+  def resource_path
+    post_path(post, anchor: "comment-#{id}")
+  end
+```
+
+```rb
+# Like.rb
+
+  # URLヘルパーを使うために導入
+  include Rails.application.routes.url_helpers
+
+  def partial_name
+    'liked_to_own_post'
+  end
+
+  def resource_path
+    post_path(post)
+  end
+```
+
+```rb
+# Relationship.rb
+
+  # URLヘルパーを使うために導入
+  include Rails.application.routes.url_helpers
+
+  def partial_name
+    'followed_me'
+  end
+
+  def resource_path
+    user_path(follower)
+  end
+```
+
+## ダックタイピング後にモジュールで型を明示する
+
+ダックタイピングを行う場合、上書きすべきメソッドが上書きされない場合にエラーとなるよう、  
+モジュールを活用して、型を明示してあげるのが一般できらしい。  
+
+正直、モジュール・ミックスイン・ダックタイピング・AcitiveSupport::Concern、  
+いずれも理解がまだ不十分なところが多いが、とりあえず形だけ真似してみた。  
+
+具体的には、以下のようなコードとして、モジュールとして各クラスに取り込んでもらいたい  
+ものを`notifiable.rb`として作成し、`models/concerns`ディレクトリに置いた。  
+
+なお、この機会を利用して、URLヘルパーとアソシエーションについて共通化できるものを切り出した。  
+
+```rb
+# concerns/notifiable.rbを作成
+
+  # インターフェースを明確化するために、moduleで固める
+  module Notifiable
+    extend ActiveSupport::Concern
+
+    # URLヘルパーを使うために導入
+    include Rails.application.routes.url_helpers
+
+    included do
+      has_many :notifications, as: :notifiable
+    end
+
+    def call_appropiate_partial
+      raise NotImplementedError
+    end
+
+    def appropiate_path
+      raise NotImplementedError
+    end
+  end
+```

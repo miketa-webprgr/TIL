@@ -66,7 +66,7 @@
 なお、ポリモーフィック関連は便利な手法ではあるが、ポリモーフィック関連を使わずとも、  
 同じような機能を実装することは可能であるので、押さえておくとよい。
 
-- [複数のテーブルに対して多対一で紐づくテーブルの設計アプローチ｜スパイスファクトリー株式会社](https://spice-factory.co.jp/development/has-and-belongs-to-many-table/
+- [複数のテーブルに対して多対一で紐づくテーブルの設計アプローチ｜スパイスファクトリー株式会社](https://spice-factory.co.jp/development/has-and-belongs-to-many-table/)
 
 ## テーブル設計について
 
@@ -238,7 +238,7 @@ end
   end
 ```
 
-## コールバック関数の設定
+## コールバックの設定
 
 コメントされた場合、いいねされた場合、そしてフォローされた場合、通知が作成される。  
 
@@ -248,10 +248,10 @@ Likeオブジェクト・Relationshipオブジェクトが生成された際に�
 方法論としては２つの方法があると思われる。  
 
 - 各コントローラのcreateアクションに記述する
-- 各モデルのコールバック関数を活用する
+- 各モデルのコールバックを活用する
 
-コールバック関数をうまく活用するとコードをDRYに書くことができるが、コントローラ側からコードが追いづらいため、  
-条件分岐を含むコールバック関数は多用すべきでないとの情報も目にした。  
+コールバックをうまく活用するとコードをDRYに書くことができるが、コントローラ側からコードが追いづらいため、  
+条件分岐を含むコールバックは多用すべきでないとの情報も目にした。  
 
 - [苦しめられてやっと理解できたRailsコールバックの使い方 \- KitchHike Tech Blog](https://tech.kitchhike.com/entry/2018/06/30/232400)
 
@@ -430,7 +430,7 @@ end
 
 コメントされた場合の通知のパーシャルを作成する。  
 
-<a href="https://gyazo.com/0ecf1fca07bdcf7707a312b7f312b53e"><img src="https://gyazo.com/c7e74b227959ba1d675e515bf608ac31" alt="Image from Gyazo" width="500"/></a></a><br>  
+<a href="https://gyazo.com/c7e74b227959ba1d675e515bf608ac31"><img src="https://i.gyazo.com/c7e74b227959ba1d675e515bf608ac31.png" alt="Image from Gyazo" width="500"/></a><br>  
 
 ここでの通知とは、「---があなたの投稿にコメントしました」と表示される１行のことを指しており、  
 その他の１行の通知が組み合わさって、通知一覧が作られている。  
@@ -711,17 +711,17 @@ CSSも忘れてず適用させる。
 ```
 
 以上を下記のとおり、リファクタする。  
-
-`include Rails.application.routes.url_helpers`を`application.rb`に書く方法もあったが、  
-影響のないモデルにまで作用するのはあまり好ましくない気がしたので、とりあえず３回同じコードを書いている。  
+`Notification.rb`の独自メソッドについて、紐付き元である`Comment.rb`などの各モデルのメソッドで上書きする。  
 
 ```rb
 # Notification.rbの独自メソッド（リファクタ後）
 
+  # 適切なパーシャルを取得するメソッド（ダックタイピングを活用）
   def call_appropiate_partial
     notifiable.partial_name
   end
 
+  # 適切なパスを取得するメソッド（ダックタイピングを活用）
   def appropiate_path
     notifiable.resource_path
   end
@@ -772,39 +772,118 @@ CSSも忘れてず適用させる。
   end
 ```
 
-## ダックタイピング後にモジュールで型を明示する
+## ダックタイピングの型を明示し、共通化できるものを`concerns/notifiable.rb`内のモジュールに記す
 
 ダックタイピングを行う場合、上書きすべきメソッドが上書きされない場合にエラーとなるよう、  
 モジュールを活用して、型を明示してあげるのが一般できらしい。  
 
 正直、モジュール・ミックスイン・ダックタイピング・AcitiveSupport::Concern、  
-いずれも理解がまだ不十分なところが多いが、とりあえず形だけ真似してみた。  
+いずれも理解がまだ不十分なところが多いが、とりあえず見よう見まねで実践してみた。  
 
 具体的には、以下のようなコードとして、モジュールとして各クラスに取り込んでもらいたい  
 ものを`notifiable.rb`として作成し、`models/concerns`ディレクトリに置いた。  
 
-なお、この機会を利用して、URLヘルパーとアソシエーションについて共通化できるものを切り出した。  
+なお、この機会を利用して、以下を共通化してみた。  
+
+- URLヘルパー
+- アソシエーション
+- コールバックと`create_notifications`メソッド
 
 ```rb
 # concerns/notifiable.rbを作成
 
-  # インターフェースを明確化するために、moduleで固める
-  module Notifiable
-    extend ActiveSupport::Concern
+# インターフェースを明確化するために、moduleで固める
+module Notifiable
+  # コールバックなどを使うために必要
+  # https://stackoverflow.com/questions/7444522/is-it-possible-to-define-a-before-save-callback-in-a-module
+  extend ActiveSupport::Concern
 
-    # URLヘルパーを使うために導入
-    include Rails.application.routes.url_helpers
+  # URLヘルパーを使うために導入
+  include Rails.application.routes.url_helpers
 
-    included do
-      has_many :notifications, as: :notifiable
-    end
-
-    def call_appropiate_partial
-      raise NotImplementedError
-    end
-
-    def appropiate_path
-      raise NotImplementedError
-    end
+  included do
+    has_many :notifications, as: :notifiable
+    after_create_commit :create_notifications
   end
+
+  def partial_name
+    raise NotImplementedError
+  end
+
+  def resource_path
+    raise NotImplementedError
+  end
+
+  def notification_user
+    raise NotImplementedError
+  end
+
+  private
+
+  # 通知を作成するメソッド（ダックタイピングを活用）
+  def create_notifications
+    Notification.create(notifiable: self, user: notification_user)
+  end
+end
 ```
+
+## NGワード制約機能のリファクタ
+
+Rails特訓コースで求められている実装ではないが、遊びで`gem 'swearjar'`を導入して、  
+NGワードを含む投稿ができないような制約を実装していた。  
+
+ただ、実装当時は勉強不足であり、無理やりコントローラやビューファイルにロジックを書くような形で実装していたので、  
+カスタムバリデータを導入し、コメントだけでなく、投稿の本文にもNGワードを含めることができないような形で実装した。  
+
+具体的には、validatorsディレクトリを切り、`ng_words_validator.rb`というファイルを作成し、  
+そこで独自のロジックを書き込み、必要なモデルクラスで読み込むような形で実装した。  
+
+
+```rb
+class NgWordsValidator < ActiveModel::Validator
+  def validate(record)
+    # NGワードをここで読み込む
+    ng_words = Swearjar.new('config/locales/my_swears.yml')
+    # NGワードを含んでいる場合はerrorを返す
+    record.errors.add(:body, 'にはNGワードが含まれています。綺麗な言葉を使いましょう。') if ng_words.profane?(record.body)
+  end
+end
+```
+
+```rb
+# comment.rbとpost.rbに以下を追加
+validates_with NgWordsValidator
+```
+
+```rb
+# application.rbに追記
+
+# カスタムバリデータを使用する
+class Application < Rails::Application
+  config.autoload_paths += Dir["#{config.root}/app/validators"]
+end
+```
+
+なお、以下にcommitログが掲載する。  
+
+- [\[update\] カスタムバリデータを使って、Postの本文にもNGワード制約を追加した](https://github.com/miketa-webprgr/instagram_clone/pull/10/commits/b337049538f43971a5ca1c885ce9ed2ed0647619)
+
+また、カスタムメソッドという単純にクラス内に独自バリデーションを追加する方法もあるが、そちらも実践してみた。  
+そちらの`commit log`は下記のとおり。  
+
+- [\[update\] Commentのバリデーションにカスタムメソッドを導入](https://github.com/miketa-webprgr/instagram_clone/pull/10/commits/bb015471184402e8e29a98ce4fa8d268157a756f)
+
+カスタムバリデーションについては、以下の記事が参考になるので、ざっと眺めてみるとよい。  
+そこまで難しくないので、実践してみると導入できるかと思う。  
+
+- [Active Record バリデーション \- Railsガイド](https://railsguides.jp/active_record_validations.html#%E3%82%AB%E3%82%B9%E3%82%BF%E3%83%A0%E3%83%90%E3%83%AA%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%99%E3%82%8B)
+- [カスタムバリデーションの作成方法まとめ \| Qrunch（クランチ）](https://qrunch.net/@hikey/entries/HZv7DnkeDThTjl5b)
+- [【Rails】Railsのバリデーションの使い方をマスターしよう！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/validation#%E3%82%AB%E3%82%B9%E3%82%BF%E3%83%A0%E3%83%90%E3%83%AA%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E4%BD%9C%E3%82%8D%E3%81%86)
+- [Railsバリデーションまとめ \- Qiita](https://qiita.com/h1kita/items/772b81a1cc066e67930e#%E3%82%AB%E3%82%B9%E3%82%BF%E3%83%A0%E3%83%90%E3%83%AA%E3%83%87%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3)
+- [【Rails】カスタムバリデータの使い方 \- TASK NOTES](https://www.task-notes.com/entry/20160918/1474210236)
+
+ちょっと恥ずかしいけど、導入するとこんな感じでバリデーションがかかる。  
+
+<img src="https://i.gyazo.com/5b34e00855e9448623141c012c834990.png" alt="Image from Gyazo" width="500"/><br>  
+
+<img src="https://i.gyazo.com/f077645a8755eb4416b5005ddf7c9877.png" alt="Image from Gyazo" width="500"/><br>  

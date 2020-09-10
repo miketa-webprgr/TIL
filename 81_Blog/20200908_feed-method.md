@@ -4,6 +4,10 @@
 
 - [Rails特訓コース課題６　モデルメソッド\(where文\)について \| TechEssentials](https://tech-essentials.work/questions/135)
 
+## Qiitaでブログを書いちゃった
+
+- [問題です！ ①と②が同じだって分かりますか？（クラス・インスタンス・メソッド・引数を実践で理解しよう！） \- Qiita](https://qiita.com/miketa_webprgr/items/361d339d2739792457ab)
+
 ## 解説したいと思ったきっかけ
 
 - もうやったやつだと思ってノートを見返したら、適当に流してしまっていて、理解していないことが判明したから
@@ -30,6 +34,10 @@ end
 ```
 
 **以上のようなコードがあるが、このfeedメソッドが何をやっているのかよく分からない！**  
+
+## ER図
+
+<img src="20200908_feed-method.png" width=500px border=1><br>
 
 ## 解説前に
 

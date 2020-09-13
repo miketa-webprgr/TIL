@@ -69,7 +69,7 @@ Railsサーバーが再起動した途端、メール送信のジョブは全て
 これでは非常に困るので、店員さんはコックにステーキを焼くようにだけ伝えてもらって、すぐ店員さんに会計に来てもらいたい。  
 つまり、ステーキを焼く行為と会計行為を同時に処理してもらえれば、問題が解決するというわけだ。  
 
-サーバーにおいても、アップロードの処理とトップページのビューを返す処理を同時に行うと問題が解決する。
+サーバーにおいても、アップロードの処理とトップページのビューを返す処理を同時に行うと問題が解決する。  
 そこで、SidekiqとRedisを導入するとよい。  
 
 SidekiqとRedisが導入されると、設定しておいた処理（今回の場合においてはメール送信）がキューとしてRedisサーバーに保存される。  
@@ -118,7 +118,7 @@ HTTP通信においては、以下の一連の通信において、互いに通�
 
 - [非同期処理とは何か？【超入門編/JavaScript/プログラミング】](https://www.youtube.com/watch?v=OBqj4I5NAEg)
 
-## 3. Sidekiqの動かし方
+### 3. Sidekiqの動かし方
 
 `bundle install`と`bundle exec rails server`をするだけでは、今回のアプリは動かすことができない。  
 そこで、これまでの概要を踏まえた上で、`Redis`と`Sidekiq`を動かす必要がある。  
@@ -218,7 +218,7 @@ queues:
               .d$$                                       |_|
 ```
 
-## 4. 実際の挙動を確認する
+### 4. 実際の挙動を確認する
 
 これで`Sidekiq`が動く準備が整った。  
 厳密には違う部分もあるだろうが、この流れを頭に入れて追っていく。  
@@ -349,7 +349,7 @@ Completed 200 OK in 296ms (Views: 26.1ms | ActiveRecord: 37.3ms)
 
 <a href="https://gyazo.com/e94cbe0c15ae139c20dd22c493ae9b31"><img src="https://i.gyazo.com/e94cbe0c15ae139c20dd22c493ae9b31.png" alt="Image from Gyazo" width="700" border=1/></a><br>  
 
-## 5. ダッシュボードでSidekiqを確認する
+### 5. ダッシュボードでSidekiqを確認する
 
 `Sidekiq`には、ジョブの処理状況をGUIで確認できるインターフェースが備わっている。  
 そのインターフェースは`sinatra`で動いているため、`sinatra`のインストールが必要となる。  
@@ -402,7 +402,9 @@ sorceryを使う場合についても公式で説明がされている。
 
 - [Not sharing session with sidekiq web\-ui · Issue \#34 · redis\-store/redis\-rails](https://github.com/redis-store/redis-rails/issues/34)
 
-## 実装に関する補足
+## 補足
+
+### 実装について
 
 `config/application.rb`にて以下のとおり設定する。  
 
@@ -458,9 +460,22 @@ end
 
 ・・・まあ、正直に言って、このあたりはレベルが高くてちょっと手に負えないけど 笑  
 
-## どうでもいい話
+### どうでもいい話
 
 GitHubの公式を見ていたら見つけた。  
 Qiita記事もあがっていた。  
 
 [Sidekiq\.❨╯°□°❩╯︵┻━┻ \- Qiita](https://qiita.com/shouta-dev/items/42ae926effccd32edc8f)
+
+### その他参考になりそうなQiita記事
+
+- [sidekiqの使い方 \- Qiita](https://qiita.com/nysalor/items/94ecd53c2141d1c27d1f)
+- [Railsで非同期処理を行える「Sidekiq」 \- Qiita](https://qiita.com/yumiyon/items/6835d90e621e73268021)
+- [秩序のないメール送信に Sidekiq \(with Active Job\) \- Qiita](https://qiita.com/QUANON/items/09c87787df6b0d287896)
+- [Ruby on Rails の Active Job と SideKiq でバックグラウンドジョブをキューイングして実行する \- Qiita](https://qiita.com/tatsurou313/items/d3664f8dda05dcd12d56)
+- [Rails 4\.2で導入されたActive Jobを使ってみよう \- Qiita](https://qiita.com/ryohashimoto/items/2f8fd685920a5318def4)
+
+### 公式が紹介しているyoutube動画
+
+- [Getting Started · mperham/sidekiq Wiki](https://github.com/mperham/sidekiq/wiki/Getting-Started)
+- [youtubeへの直リンク](https://www.youtube.com/watch?v=bfPb1zD91Rg&index=1&list=PLjeHh2LSCFrWGT5uVjUuFKAcrcj5kSai1&ab_channel=SmoothTerminal)

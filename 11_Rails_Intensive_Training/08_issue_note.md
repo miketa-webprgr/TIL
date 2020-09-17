@@ -73,6 +73,9 @@ render partial: 'post', collection: @posts
 インスタンス変数postを引き渡す場合には使えるが、この条件に合致しない場合、  
 きちんとpartialファイル名やcollectionオプションについて指定してあげる必要がある。  
 
+なお、パーシャル側で使うローカル変数名は、パーシャル名になる。  
+collectionの単数系と勘違いしないように注意すること。  
+
 詳細は、こちらのサイトなどから確認できる。  
 
 - [【Rails】部分テンプレートの使い方を徹底解説！ \| Pikawaka \- ピカ1わかりやすいプログラミング用語サイト](https://pikawaka.com/rails/partial_template#%E7%9C%81%E7%95%A5%E3%81%97%E3%81%9F%E6%9B%B8%E3%81%8D%E6%96%B9)

@@ -45,3 +45,12 @@ select user, host, password from mysql.user;
 ユーザー作成の際に参考になった。
 
 - [ユーザーに権限を設定する\(GRANT文\) \| MySQLの使い方](https://www.dbonline.jp/mysql/user/index6.html)
+
+## その他の基本的なコマンド
+
+```text
+show databases;
+show database データベースA;
+show tables;
+show table テーブルA;
+```

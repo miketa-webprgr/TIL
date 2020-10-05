@@ -38,7 +38,7 @@ Google検索をした際に、どうしたら上位に表示させることが�
 
 - [SEOとは？ 押さえておくべき24のSEO対策方法とポイント](https://www.gyro-n.com/seo/hack/seo-point/)
 - [検索エンジン最適化（SEO）スターター ガイド \- Search Console ヘルプ](https://support.google.com/webmasters/answer/7451184?hl=ja)
-- [Googleが作成したSEOに関するスターターガイド（PDF）](chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/index.html)
+- [Googleが作成したSEOに関するスターターガイド（PDF）](https://static.googleusercontent.com/media/www.google.co.jp/ja/jp/intl/ja/webmasters/docs/search-engine-optimization-starter-guide-ja.pdf)
 
 ## `gem 'meta-tags'`について
 
@@ -328,7 +328,8 @@ meta:
     - Rails特訓コース
   og:
     type: website
-    image_path: ogp.png
+    # 画像をGitHubにpushしたくなかったので、URLで指定しています
+    image_path: https://i.gyazo.com/9e198c10b972906d645516e86b89c66b.png
 ```
 
 すると、`application.html.slim`に1行だけ書いたコードが、このようなHTMLに変換される。  

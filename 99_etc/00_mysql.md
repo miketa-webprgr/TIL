@@ -13,28 +13,22 @@ mysql.server start
 mysql.server stop
 ```
 
-## 魔法のコマンド
+## MySQLのバージョン起因？の問題
 
-今度、魔法のコマンドについて、改めてちゃんと理解しよう。  
-初期設定でパスを設定する。  
-
-```text
-bundle config --local build.mysql2 "--with-cppflags=-I/usr/local/opt/openssl/include"
-bundle config --local build.mysql2 "--with-ldflags=-L/usr/local/opt/openssl/lib"
-```
-
-- [【Rails】MySQL2がbundle installできない時の対応方法 \- Qiita](https://qiita.com/fukuda_fu/items/463a39406ce713396403)
-
-## ユーザー確認
-
-ルートユーザーでアクセスし、ユーザーの一覧を確認する。
+エラーメッセージは以下のとおり。  
 
 ```text
-mysql -u root -p
-#=> パスワードを入力
+SELECT list is not in GROUP BY clause and contains nonaggregated column … incompatible with sql_mode=only_full_group_by
+```
 
-select user, host, password from mysql.user;
-```
+解決策。  
+詳細はまだ理解していない。  
+
+```text
+SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
+```
+
+- [StackOverFlow](https://stackoverflow.com/questions/41887460/select-list-is-not-in-group-by-clause-and-contains-nonaggregated-column-inc)
 
 ## MySQLの初期設定
 
@@ -48,9 +42,4 @@ select user, host, password from mysql.user;
 
 ## その他の基本的なコマンド
 
-```text
-show databases;
-show database データベースA;
-show tables;
-show table テーブルA;
-```
+- [別ノートを参照すること](11_Rails_Intensive_Training/00_mysql_note.md)

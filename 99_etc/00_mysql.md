@@ -26,8 +26,9 @@ SELECT list is not in GROUP BY clause and contains nonaggregated column … inco
 
 ```text
 SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
-```
+```
 
+- [MySQL5\.7でONLY\_FULL\_GROUP\_BYをOFFにする方法 \- Qiita](https://qiita.com/shiutk/items/9176e6d76c1707bc36c7)
 - [StackOverFlow](https://stackoverflow.com/questions/41887460/select-list-is-not-in-group-by-clause-and-contains-nonaggregated-column-inc)
 
 ## MySQLの初期設定

@@ -35,3 +35,10 @@ SHOW TABLES;
 ### `users`テーブルから全てのデータを取得（users以外でも可能）
 
 SELECT * FROM `users`;
+
+### mysqlのdumpを投入する
+
+mysql -uroot -p データベース名 < dumpファイルのパス
+例：mysql -uroot -p database_name < /Users/kentasuedomi/Downloads/database.sql
+
+- [mysqldumpまとめ \- Qiita](https://qiita.com/PlanetMeron/items/3a41e14607a65bc9b60c)

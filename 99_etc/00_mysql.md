@@ -43,4 +43,4 @@ SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
 
 ## その他の基本的なコマンド
 
-- [別ノートを参照すること](11_Rails_Intensive_Training/00_mysql_note.md)
+- [別ノートを参照すること](../11_Rails_Intensive_Training/00_mysql_note.md)

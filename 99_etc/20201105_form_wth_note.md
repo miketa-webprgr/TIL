@@ -360,3 +360,36 @@ end
 あと、外部キーを直接操作できると、セキュリティ上の問題が生じると書いてある。  
 全然ピンとこない。。。  
 
+## 任意のオブジェクトのコレクションに対してオプションタグを使う
+
+繰り返しになるが、selectを使うとこんな感じでモデルに紐づけることができる。  
+
+```erb
+<%= select(:person, :city_id, [['Lisbon', 1], ['Madrid', 2], ...]) %>
+```
+
+selectの第３引数は配列であるが、これもモデルに紐づけて生成する事ができる。  
+例えば、こんな感じで。  
+
+```erb
+<% cities_array = City.all.map { |city| [city.name, city.id] } %>
+<%= options_for_select(cities_array) %>
+```
+
+これをさらに簡単に書く方法として、`options_from_collection_for_select`がある。  
+第１引数がvalueオプション（通常はid）、第２引数がtextオプション（オプションで表示される文字）である。  
+
+```erb
+<%= options_from_collection_for_select(City.all, :id, :name) %>
+
+=> [['Lisbon', 1], ['Madrid', 2], ...]
+```
+
+selectとoptions_from_collection_for_selectの合わせ技として、  
+collection_selectがある。これを使うと、選択済みの値をモデルから取得することができる。  
+
+```erb
+<%= collection_select(:person, :city_id, City.all, :id, :name) %>
+```
+
+第１引数で紐づけるモデル

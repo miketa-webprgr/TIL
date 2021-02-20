@@ -1,0 +1,102 @@
+@startuml
+title プログラミング勉強スケジュール
+ganttscale daily
+hide footbox
+
+'----------------------------------------------------
+'開始日・作業可能日などの設定
+Project starts the 15th of February 2021
+
+mondays are closed
+tuesdays are closed
+wednesdays are closed
+thursdays are closed
+fridays are closed
+
+2021-2-23 is open
+2021-3-20 is open
+2021-4-29 is open
+2021-5-3 is open
+2021-5-4 is open
+2021-5-5 is open
+2021-7-22 is open
+2021-7-23 is open
+2021-8-8 is open
+2021-8-9 is open
+2021-9-20 is open
+2021-9-23 is open
+2021-11-3 is open
+2021-11-23 is open
+
+'----------------------------------------------------
+'タスク一覧
+[引越し準備] lasts 1 days
+then [副業（メール送信 + validation対応）] lasts 1 days
+then [Rails特訓 CircleCIの課題] lasts 1 days
+then [AWSのノート作成] lasts 1 days
+then [引越しの準備] lasts 1 days
+then [副業（仮1）] lasts 1 days
+then [諸手続き + 確定申告] lasts 1 days
+then [FactoryBotのtraitとか] lasts 1 days
+then [SQLのミック本] lasts 3 days
+then [オブジェクト指向でなぜ作るのか（主に電車）] lasts 1 days
+then [オブジェクト指向設計実践ガイド（可能な範囲で）] lasts 2 days
+then [JSPrimer] lasts 2 days
+then [JSでおみくじアプリを作る] lasts 2 days
+note bottom
+  ドットインストール
+end note
+then [鍵当番アプリ（LINE botが主な機能）] lasts 6 days
+note bottom
+  体育館の鍵当番の通知をしたり、管理をするアプリ
+end note
+then [副業（仮2）] lasts 2 days
+then [Vueの勉強 Vueで何かを作る] lasts 2 days
+then [RailsAPIのUdemy] lasts 4 days
+
+'----------------------------------------------------
+'特別なタスク（引越しなど）
+[段ボール詰め] starts 2021-2-20 and lasts 1 days
+[引越し諸手続き] starts 2021-2-20 and ends 2021-2-28
+[引越し] starts 2021-3-6 and ends 2021-3-7
+
+@enduml
+'----------------------------------------------------
+'ここからはメモ欄
+
+'plantUMLのメリット
+'- thenを使って整理できるので、どのタスクがいつ頃に出来そうか把握できる
+'- 早くやりたいタスクがある場合、適宜順番を入れ替える
+'- 色々とやりたい病を回避するため、何ができて、何ができないか分かりやすくするため
+'- また、テキストベースで管理ができるため、編集がストレスフリー
+'- 言い換えれば、ストレスを感じるようであれば、廃止することも検討すること
+
+'dailyでやっていくこと
+'- 業務委託関係は平日に頑張る
+'- 月曜日はform_withの記事の日にする
+
+'タスクに埋め込みたいこと
+' - Railsチュートリアルの8・9章
+' - form_withの記事 毎週１回
+' - SQLの勉強
+' - RSpec・Fac†oryBotの勉強
+' - 何かしらの勉強会やりたい（継続的なもの）after 引越し
+
+' 祝日一覧
+' 1	1/1	(金)	元日
+' 2	1/11	(月)	成人の日
+' 3	2/11	(木)	建国記念の日
+' 4	2/23	(火)	天皇誕生日
+' 5	3/20	(土)	春分の日
+' 6	4/29	(木)	昭和の日
+' 7	5/3	(月)	憲法記念日
+' 8	5/4	(火)	みどりの日
+' 9	5/5	(水)	こどもの日
+' 10	7/22	(木)	海の日
+' 11	7/23	(金)	スポーツの日
+' 12	8/8	(日)	山の日
+' 13	8/9	(月)	振替休日
+' 14	9/20	(月)	敬老の日
+' 15	9/23	(木)	秋分の日
+' 16	11/3	(水)	文化の日
+' 17	11/23	(火)	勤労感謝の日

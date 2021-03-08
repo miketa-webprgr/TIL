@@ -32,15 +32,15 @@ fridays are closed
 'タスク一覧
 [引越し準備] lasts 1 days
 then [副業（メール送信 + validation対応）] lasts 1 days
+then [引越し] lasts 5 days
 then [副業（メール送信）part 2] lasts 1 days
-then [引越しの準備] lasts 3 days
 then [業務委託（新しいタスク）part 1] lasts 2 days
 then [AWSのノート作成] lasts 1 days
 then [業務委託（新しいタスク）part 2] lasts 2 days
 then [Rails特訓 CircleCIの課題] lasts 1 days
 then [諸手続き + 確定申告] lasts 1 days
 then [FactoryBotのtraitとか] lasts 1 days
-then [SQLのミック本] lasts 2 days
+then [SQLのミック本] lasts 1 days
 then [オブジェクト指向でなぜ作るのか（主に電車）] lasts 1 days
 then [オブジェクト指向設計実践ガイド（可能な範囲で）] lasts 2 days
 then [JSPrimer] lasts 2 days

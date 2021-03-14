@@ -55,12 +55,14 @@ end note
 then [副業（仮2）] lasts 2 days
 then [Vueの勉強 Vueで何かを作る] lasts 2 days
 then [RailsAPIのUdemy] lasts 4 days
+then [OAuthの本（Auth屋）] lasts 3 days
 
 '----------------------------------------------------
 '特別なタスク（引越しなど）
 [段ボール詰め] starts 2021-2-20 and lasts 1 days
 [引越し諸手続き] starts 2021-2-20 and ends 2021-2-28
 [引越し] starts 2021-3-6 and ends 2021-3-7
+[mockの勉強] starts 2021-3-14 and ends 2021-3-21
 
 @enduml
 '----------------------------------------------------

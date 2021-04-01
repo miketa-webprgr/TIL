@@ -5,13 +5,17 @@ hide footbox
 
 '----------------------------------------------------
 '開始日・作業可能日などの設定
-Project starts the 15th of February 2021
+Project starts the 1th of April 2021
 
 mondays are closed
 tuesdays are closed
 wednesdays are closed
 thursdays are closed
 fridays are closed
+saturdays are closed
+
+'業務委託用（8時間）
+saturdays are colored in salmon
 
 2021-2-23 is open
 2021-3-20 is open
@@ -29,40 +33,34 @@ fridays are closed
 2021-11-23 is open
 
 '----------------------------------------------------
-'タスク一覧
-[引越し準備] lasts 1 days
-then [副業（メール送信 + validation対応）] lasts 1 days
-then [引越し] lasts 5 days
-then [副業（メール送信）part 2] lasts 1 days
-then [業務委託（新しいタスク）part 1] lasts 2 days
-then [AWSのノート作成] lasts 1 days
-then [業務委託（新しいタスク）part 2] lasts 2 days
-then [Rails特訓 CircleCIの課題] lasts 1 days
-then [諸手続き + 確定申告] lasts 1 days
-then [FactoryBotのtraitとか] lasts 1 days
-then [SQLのミック本] lasts 1 days
-then [オブジェクト指向でなぜ作るのか（主に電車）] lasts 1 days
-then [オブジェクト指向設計実践ガイド（可能な範囲で）] lasts 2 days
+'集中して週末に取り組むタスク
+[諸手続き + 確定申告] lasts 1 days
+then [旅行] lasts 2 days
+then [FactoryBotのtraitなど] lasts 1 days
 then [JSPrimer] lasts 2 days
 then [JSでおみくじアプリを作る] lasts 2 days
 note bottom
   ドットインストール
 end note
-then [鍵当番アプリ（LINE botが主な機能）] lasts 6 days
+then [Vueの勉強 Vueで何かを作る] lasts 2 days
+then [鍵当番アプリ] lasts 6 days
 note bottom
   体育館の鍵当番の通知をしたり、管理をするアプリ
 end note
-then [副業（仮2）] lasts 2 days
+then [オブジェクト指向設計実践ガイド] lasts 2 days
 then [Vueの勉強 Vueで何かを作る] lasts 2 days
 then [RailsAPIのUdemy] lasts 4 days
 then [OAuthの本（Auth屋）] lasts 3 days
 
 '----------------------------------------------------
-'特別なタスク（引越しなど）
-[段ボール詰め] starts 2021-2-20 and lasts 1 days
-[引越し諸手続き] starts 2021-2-20 and ends 2021-2-28
-[引越し] starts 2021-3-6 and ends 2021-3-7
-[mockの勉強] starts 2021-3-14 and ends 2021-3-21
+'日々ちょこちょこ進めていくタスク
+[circleCIノート + 就職活動を終えてnote] starts 2021-4-4 and ends 2021-4-18
+[AWSノート作成] starts 2021-4-18 and ends 2021-5-2
+[チェリー本] starts 2021-5-2 and ends 2021-5-16
+[オブジェクト指向でなぜ作るのかpart1] starts 2021-5-16 and ends 2021-5-30
+[オブジェクト指向でなぜ作るのかpart2] starts 2021-5-30 and ends 2021-6-13
+[インフラエンジニアの教科書] starts 2021-6-13 and ends 2021-6-27
+[SQLミック本] starts 2021-6-27 and ends 2021-7-11
 
 @enduml
 '----------------------------------------------------
@@ -84,7 +82,6 @@ then [OAuthの本（Auth屋）] lasts 3 days
 ' - form_withの記事 毎週１回
 ' - SQLの勉強
 ' - RSpec・Fac†oryBotの勉強
-' - 何かしらの勉強会やりたい（継続的なもの）after 引越し
 
 ' 祝日一覧
 ' 1	1/1	(金)	元日
